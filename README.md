@@ -5,3 +5,4 @@ Nightlight data has been used in Economics to assess the level of economic activ
 
 Any commentaries or suggestions will be gratefully accepted
 
+Iván Higuera Mendieta 
