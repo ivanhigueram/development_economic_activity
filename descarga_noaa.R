@@ -6,7 +6,7 @@ library(sp)
 library(stringr)
 library(RCurl)
 library(plyr)
-library(R.utils)
+library(Rutils)
 
 setwd("~/Procesamiento_OLS")
 #Descargar datos de luces#
