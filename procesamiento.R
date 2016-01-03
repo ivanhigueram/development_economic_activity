@@ -4,6 +4,20 @@ library(sp)
 library(ggplot)
 library(lattice)
 
+#Open .tif files as a raster (the raster package allow to read these files in the disk and not in the memory, this improves the efficiency of functions in R)
+r <- readGDAL("TIFF/F182012.v4c_web.stable_lights.avg_vis.tif")
+colombia_regiones1 <- getData("GADM", country="CO", level=1)
+colombia_regiones2 <- getData("GADM", country="CO", level=2)
+
+plot(colombia_regiones2, axes=T)
+colombia_ext <- extent(-79, -67, -4, 12.5)
+r_colombia <- crop(r, colombia_ext)
+plot(r_colombia, add=T)
+
+plot(r_colombia, axes=T, col=terrain.colors(100))
+plot(colombia_regiones1, add=T)
+
+
 #Leer archivos raster#
 setwd("~/Documents/F101992.v4 (2)")
 r1992 <- readGDAL("F101992.v4b_web.stable_lights.avg_vis.tif")
