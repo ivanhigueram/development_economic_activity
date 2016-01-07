@@ -11,3 +11,6 @@ plot(pacific_littoral_map,
 plot(communities_littoral[[1]], add=T, col="coral")
 plot(communities_littoral[[2]], add=T, col="coral4")
 
+#Map of lights over the Pacific littoral
+
+
