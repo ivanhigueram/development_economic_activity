@@ -46,3 +46,15 @@ rasters_communities <- lapply(rasters_pacifico, raster::extract,communities_litt
 luces_promedio_indigenas <- data.frame(rasters_indigenas)
 luces_promedio_negritudes <- data.frame(rasters_communities)
 
+rasters_stack <- stack(rasters)
+rasters_pacifico <- lapply(rasters, crop, pacific_littoral_map)
+
+#Now I extract the light info to the spatial polygons of the communities
+rasters_indigenas <- lapply(rasters_pacifico, raster::extract, indigenous_territories_reproject, fun = mean, na.rm= TRUE, df = TRUE)
+rasters_communities <- lapply(rasters_pacifico, raster::extract, black_territories_reproject, fun = mean, na.rm= TRUE, df = TRUE)
+
+#Set the results as data.frame
+luces_promedio_indigenas <- ldply(rasters_indigenas)
+luces_promedio_negritudes <- ldply(rasters_communities)
+
+
