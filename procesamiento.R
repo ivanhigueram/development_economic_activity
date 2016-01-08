@@ -36,7 +36,6 @@ setwd("/Volumes/LaCie/NOAA2/TIFF/")
 #Read rasters and group them into a stack (I used the crop function to cut the rasters to the same extent)
 list_raster <- list.files()
 rasters <- lapply(list_raster, raster)
-rasters_stack <- stack(rasters)
 rasters_pacifico <- lapply(rasters, crop, pacific_littoral_map)
 
 #Now I extract the light info to the spatial polygons of the communities
@@ -44,6 +43,6 @@ rasters_indigenas <- lapply(rasters_pacifico, raster::extract, communities_litto
 rasters_communities <- lapply(rasters_pacifico, raster::extract,communities_littoral[[1]], fun = mean, na.rm= TRUE, df = TRUE)
 
 #Set the results as data.frame
-luces_promedio_indigenas <- ldply(rasters_indigenas)
-luces_promedio_negritudes <- ldply(rasters_communities)
+luces_promedio_indigenas <- data.frame(rasters_indigenas)
+luces_promedio_negritudes <- data.frame(rasters_communities)
 
