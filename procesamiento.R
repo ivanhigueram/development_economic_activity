@@ -12,6 +12,7 @@ setwd("/Volumes/LaCie/Datos")
 colombia_departments <- getData("GADM", download=T, country="CO", level=1)
 black_territories <- readOGR(dsn = "Comunidades", layer="Tierras de Comunidades Negras (2015) ")
 indigenous_territories <- readOGR(dsn = "Resguardos", layer="Resguardos Indigenas (2015) ") 
+elevation <- getData("alt", co="COL")
 
 #Get political GIS data
 landmines <- readOGR(dsn = "MAP&MUSE_GIS", layer = "eventos_shape")
@@ -38,10 +39,25 @@ list_raster <- list.files()
 rasters <- lapply(list_raster, raster)
 rasters_pacifico <- lapply(rasters, crop, pacific_littoral_map)
 
+#We need to put all rasters into the same extent (all have the same resolution)
+rasters_extent <- extent(rasters_pacifico[[1]])
+rasters_pacifico <- lapply(rasters_pacifico, setExtent, rasters_extent)
+
+#Stack them
+stack_pacifico <- stack(rasters_pacifico)
+
+
 #Now I extract the light info to the spatial polygons of the communities
 rasters_indigenas <- lapply(rasters_pacifico, raster::extract, communities_littoral[[2]], fun = mean, na.rm= TRUE, df = TRUE)
 rasters_communities <- lapply(rasters_pacifico, raster::extract,communities_littoral[[1]], fun = mean, na.rm= TRUE, df = TRUE)
 
+
 #Set the results as data.frame
 luces_promedio_indigenas <- data.frame(rasters_indigenas)
 luces_promedio_negritudes <- data.frame(rasters_communities)
+
+
+
+#Elevation data
+elevation_pacifico <- crop(elevation, pacific_littoral_map)
+elevation_pacifico <- setExtent(elevation_pacifico, rasters_extent)
