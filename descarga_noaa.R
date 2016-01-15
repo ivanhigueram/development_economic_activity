@@ -8,7 +8,7 @@ library(RCurl)
 library(plyr)
 library(R.utils)
 
-setwd("~/Procesamiento_OLS")
+setwd("/Volumes/LaCie")
 #Descargar datos de luces#
 
 #1. Get URL's

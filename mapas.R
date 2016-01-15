@@ -16,11 +16,10 @@ plot(communities_littoral[[2]], add=T, col="coral4")
 
 #Map of lights over the Pacific littoral (rasters is a list of the rasters for the all the years)
 littoral_lights13 <- mask(rasters_pacifico[[35]], pacific_littoral_map)
-png("litoral_comunidades_2013.jpeg", width = 8.5, height = 11, units = 'in', res = 1000)
-plot(littoral_lights13, col=grey.colors(100))
-plot(pacific_littoral_map, add=T)
-plot(communities_littoral[[2]], add=T, lwd=0.1, col="coral4", alpha=0.5)
-plot(black_territories_union, add=T, lwd=0.1, col="coral", alpha=0.5)
+png("litoral_comunidades_2013_municipios.jpeg", width = 8.5, height = 11, units = 'in', res = 1000)
+plot(rasters_pacifico[[35]], col=grey.colors(100))
+plot(layers_reprojected[[1]], add=T,  col= "coral")
+plot(pacific_littoral_map2, lwd=2, border= "red", lwd=1, add=T)
 dev.off()
 
 #Export to KML files
