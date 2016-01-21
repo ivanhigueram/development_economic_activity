@@ -63,15 +63,22 @@ rasters_extent_pacifico <- extent(stack_pacifico)
 elevation_pacifico <- crop(elevation, rasters_extent_pacifico)
 elevation_pacifico <- setExtent(elevation_pacifico, rasters_extent_pacifico)#The same for elevation raster
 
-
 #Extract elevation and light data for each pixel (1*1 km  grid approximately)
 stack_pacifico_dataframe <- extract(stack_pacifico, seq_len(ncell(stack_pacifico)), df=TRUE)
 elevation_dataframe <- extract(elevation_pacifico, seq_len(ncell(elevation_pacifico)), df=TRUE)
 merge_rasters_dataframes <- merge(elevation_dataframe, stack_pacifico_dataframe, by="ID")
 
+#Get black communities by year
+communities_littoral[[1]]@data$year <- str_extract(communities_littoral[[1]]@data$RESOLUCION, "[1-2][0, 9][0, 1, 9][0-9]")
+
 #Join black communities territories (create a frontier)
 communities_littoral[[1]]$ID <- 1
 black_territories_union <- unionSpatialPolygons(communities_littoral[[1]], communities_littoral[[1]]$ID)
+
+#Create a border line from polygons
+border_black_territories <- as(black_territories_union, "SpatialLines")
+border_black_territories <- as(border_black_territories, "SpatialPoints")
+
 
 #Now I extract the light info to the spatial polygons of the communities
 rasters_indigenas <- lapply(rasters_pacifico, raster::extract, communities_littoral[[2]], fun = mean, na.rm= TRUE, df = TRUE)
