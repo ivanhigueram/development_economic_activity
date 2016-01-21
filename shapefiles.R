@@ -11,6 +11,9 @@ library(grid)
 library(dplyr)
 library(stringr)
 
+
+#SpatialPolgon processing: Get administrative shape files and more geographical info. 
+
 #Get administrative GIS data
 setwd("/Volumes/LaCie/Datos")
 colombia_municipios <- readOGR(dsn = "Geografia", layer="Municipios")
@@ -83,13 +86,5 @@ black_territories_union <- unionSpatialPolygons(communities_littoral[[1]], commu
 border_black_territories <- as(black_territories_union, "SpatialLines")
 border_black_territories <- as(border_black_territories, "SpatialPoints")
 
-
-#Now I extract the light info to the spatial polygons of the communities
-rasters_indigenas <- lapply(rasters_pacifico, raster::extract, communities_littoral[[2]], fun = mean, na.rm= TRUE, df = TRUE)
-rasters_communities <- lapply(rasters_pacifico, raster::extract,communities_littoral[[1]], fun = mean, na.rm= TRUE, df = TRUE)
-
-#Set the results as data.frame
-luces_promedio_indigenas <- data.frame(rasters_indigenas)
-luces_promedio_negritudes <- data.frame(rasters_communities)
 
 
