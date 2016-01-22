@@ -86,5 +86,3 @@ black_territories_union <- unionSpatialPolygons(communities_littoral[[1]], commu
 border_black_territories <- as(black_territories_union, "SpatialLines")
 border_black_territories <- as(border_black_territories, "SpatialPoints")
 
-
-

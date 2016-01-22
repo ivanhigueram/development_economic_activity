@@ -22,7 +22,6 @@ download.file(
 elevation <- raster("altura_mean_30arc.tif")
 
 #Open .tif files as a raster (the raster package allow to read these files in the disk and not in the memory, this improves the efficiency of functions in R)
-rasterOptions(tmpdir="Volumes/LaCie/tmpraster")
 setwd("~")
 setwd("/Volumes/LaCie/NOAA2/TIFF/")
 
@@ -46,3 +45,11 @@ elevation_pacifico <- setExtent(elevation_pacifico, rasters_extent_pacifico)#The
 stack_pacifico_dataframe <- extract(stack_pacifico, seq_len(ncell(stack_pacifico)), df=TRUE)
 elevation_dataframe <- extract(elevation_pacifico, seq_len(ncell(elevation_pacifico)), df=TRUE)
 merge_rasters_dataframes <- merge(elevation_dataframe, stack_pacifico_dataframe, by="ID")
+
+#Average years with two rasters 
+year_list <- lapply(list_raster, str_sub, 4, 7)
+duplicated_years <- year_list[duplicated(year_list)]
+duplicated_rasters <- list_raster[lapply(list_raster, str_sub, 4, 7) %in% duplicated_years]
+
+
+by(factor(list_raster), INDICES , raster::overlay)
