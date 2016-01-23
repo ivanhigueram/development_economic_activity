@@ -25,3 +25,12 @@ dev.off()
 
 #Export to KML files
 lapply(rasters_pacifico, KML)
+
+
+#Plot black communities by year
+list_year <- levels(communities_littoral[[1]]@data$year)
+black_territories_year <- split(communities_littoral[[1]], communities_littoral[[1]]@data$year)
+
+
+
+

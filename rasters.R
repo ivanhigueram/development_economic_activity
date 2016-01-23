@@ -34,12 +34,17 @@ rasters_pacifico <- lapply(rasters, crop, pacific_littoral_map)
 stack_pacifico <- stack(rasters_pacifico) #Stack them!
 
 #Once cropped, you can mask the rasters to include all the pixels within the Pacific littoral (if the centroid of the pixel is outside the litroral, its value is set to NA)
-stack_pacifico_mask <- mask(stack_pacifico, pacific_littoral_map)
+stack_pacifico_mask <- mask(stack_pacifico, pacific_littoral_map_dpto)
 
 #The same for elevation raster
 rasters_extent_pacifico <- extent(stack_pacifico)
 elevation_pacifico <- crop(elevation, rasters_extent_pacifico)
 elevation_pacifico <- setExtent(elevation_pacifico, rasters_extent_pacifico)#The same for elevation raster
+
+#Calculate distance from grids or pixels to borders
+gIsValid(gBuffer(communities_littoral[[1]], byid=T, width=0),reason=TRUE,byid=TRUE)
+valid_polygons <- communities_littoral[[1]][gIsValid(communities_littoral[[1]],reason=TRUE,byid=TRUE) == "Valid Geometry", ]
+border <- gIntersection(valid_polygons, pacific_littoral_map_dpto) #Define border between non-commuitary lands and communitary lands
 
 #Extract elevation and light data for each pixel (1*1 km  grid approximately)
 stack_pacifico_dataframe <- extract(stack_pacifico, seq_len(ncell(stack_pacifico)), df=TRUE)
@@ -52,4 +57,3 @@ duplicated_years <- year_list[duplicated(year_list)]
 duplicated_rasters <- list_raster[lapply(list_raster, str_sub, 4, 7) %in% duplicated_years]
 
 
-by(factor(list_raster), INDICES , raster::overlay)
