@@ -46,8 +46,24 @@ communities_littoral[[1]]@data$year <- str_extract(communities_littoral[[1]]@dat
 communities_littoral[[1]]@data$year <- as.factor(communities_littoral[[1]]@data$year)
 levels(communities_littoral[[1]]@data$year)[levels(communities_littoral[[1]]@data$year)==2919] <- "2012"
 
-#Join black communities territories (create a frontier)
-communities_littoral[[1]]$ID <- 1
-black_territories_union <- unionSpatialPolygons(communities_littoral[[1]], communities_littoral[[1]]$ID)
+#Join black communities territories
+black_communities_union <- gUnaryUnion(communities_littoral[[1]])
+black_communities_union_p <- as(black_communities_union, "SpatialLines")
+black_communities_union_p <- as(black_communities_union_p, "SpatialPoints")
+
+#Distances
+#Create a distance raster (all distances to the nearest point)
+distance_raster <- distanceFromPoints(stack_pacifico_mask[[1]], black_communities_union_p)
+distance_raster_p <- as(distance_raster, "SpatialPixels")
+#Identify cells within the polygon
+cell_black_communities <- cellFromPolygon(distance_raster, black_communities_union)
+pixels_black_communities <- over(black_communities_union, distance_raster_p, returnList = T)
+pixels_black_communities <- unlist(pixels_black_communities)
+#Select the relevant distances 
+black_communities_distance_raster <- rasterFromCells(distance_raster, unlist(pixels_black_communities), values=TRUE)
+
+
+
+prueba_rasterize <- rasterize(black_communities_union, stack_pacifico_mask[[1]])
 
 
