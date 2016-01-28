@@ -37,6 +37,7 @@ colombia_departamentos <- SpatialPolygonsDataFrame(colombia_departamentos, colom
 pacific_littoral <- c("CAUCA", "CHOCÓ", "VALLE DEL CAUCA", "NARIÑO")
 pacific_littoral_map_muni <- colombia_municipios[colombia_municipios@data$NOM_DEPART %in% pacific_littoral, ]
 pacific_littoral_map_dpto <- colombia_departamentos[colombia_departamentos@data$Group.1 %in% pacific_littoral, ]
+pacific_littoral_maps <- split(pacific_littoral_map_dpto, factor(pacific_littoral_map_dpto@data$Group.1))
 
 #Filter only communities in the pacific littoral
 communities_littoral <- lapply(layers_reprojected, crop, pacific_littoral_map_dpto)
@@ -48,22 +49,8 @@ levels(communities_littoral[[1]]@data$year)[levels(communities_littoral[[1]]@dat
 
 #Join black communities territories
 black_communities_union <- gUnaryUnion(communities_littoral[[1]])
-black_communities_union_p <- as(black_communities_union, "SpatialLines")
-black_communities_union_p <- as(black_communities_union_p, "SpatialPoints")
-
-#Distances
-#Create a distance raster (all distances to the nearest point)
-distance_raster <- distanceFromPoints(stack_pacifico_mask[[1]], black_communities_union_p)
-distance_raster_p <- as(distance_raster, "SpatialPixels")
-#Identify cells within the polygon
-cell_black_communities <- cellFromPolygon(distance_raster, black_communities_union)
-pixels_black_communities <- over(black_communities_union, distance_raster_p, returnList = T)
-pixels_black_communities <- unlist(pixels_black_communities)
-#Select the relevant distances 
-black_communities_distance_raster <- rasterFromCells(distance_raster, unlist(pixels_black_communities), values=TRUE)
-
-
-
-prueba_rasterize <- rasterize(black_communities_union, stack_pacifico_mask[[1]])
+black_communities_union_l <- as(black_communities_union, "SpatialLines")
+black_communities_union_p <- as(black_communities_union_l, "SpatialPoints")
+black_communities_r <- rasterize(black_communities_union, stack_pacifico_mask[[1]])
 
 
