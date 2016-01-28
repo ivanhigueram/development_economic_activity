@@ -36,11 +36,14 @@ stack_pacifico <- stack(rasters_pacifico) #Stack them!
 #Rasters by department
 list_stack_pacifico_dpto <- list()
 for(i in c(1:4)){
-  list_stack_pacifico[[i]] <- lapply(rasters_pacifico, crop, pacific_littoral_maps[[i]])
+  list_stack_pacifico_dpto[[i]] <- lapply(rasters_pacifico, crop, pacific_littoral_maps[[i]])
 }
-list_stack_pacifico_dpto <- unlist(list_stack_pacifico_dpto)
+list_stack_pacifico_dpto <- lapply(list_stack_pacifico_dpto, stack)
 
-
+list_stack_pacifico_dpto_mask <- list()
+for(i in c(1:4)){
+  list_stack_pacifico_dpto_mask[[i]] <- lapply(list_stack_pacifico_dpto, mask, pacific_littoral_maps[[i]])
+}
 
 #Once cropped, you can mask the rasters to include all the pixels within the Pacific littoral (if the centroid of the pixel is outside the litroral, its value is set to NA)
 stack_pacifico_mask <- mask(stack_pacifico, pacific_littoral_map_muni)
