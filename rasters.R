@@ -15,7 +15,7 @@ library(stringr)
 #Rasters processing: crop, mask, make calculations and extract raster data
 
 #Elevation data
-setwd("/Volumes/LaCie/Datos")
+setwd("/Volumes/LaCie/Datos") 
 download.file(     
   url = "http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Global_tiles_GMTED/300darcsec/mea/W090/10S090W_20101117_gmted_mea300.tif" ,
   destfile = "altura_mean_30arc.tif", mode="wb")
@@ -33,28 +33,24 @@ rasters <- lapply(rasters, setExtent, rasters_extent)
 rasters_pacifico <- lapply(rasters, crop, pacific_littoral_map_muni)
 stack_pacifico <- stack(rasters_pacifico) #Stack them!
 
-#Rasters by department
-list_stack_pacifico_dpto <- list()
-for(i in c(1:4)){
-  list_stack_pacifico_dpto[[i]] <- lapply(rasters_pacifico, crop, pacific_littoral_maps[[i]])
-}
-list_stack_pacifico_dpto <- lapply(list_stack_pacifico_dpto, stack)
-
-list_stack_pacifico_dpto_mask <- list()
-for(i in c(1:4)){
-  list_stack_pacifico_dpto_mask[[i]] <- lapply(list_stack_pacifico_dpto, mask, pacific_littoral_maps[[i]])
-}
-
 #Once cropped, you can mask the rasters to include all the pixels within the Pacific littoral (if the centroid of the pixel is outside the litroral, its value is set to NA)
 stack_pacifico_mask <- mask(stack_pacifico, pacific_littoral_map_muni)
 
-#(...) or within each of the departaments
-x <- function(a, b){
-  a <- list(a)
-  b <- list(b)
-  crop(a, b)
+#Rasters cropped by department
+list_stack_pacifico_dpto <- list()
+for(i in names(pacific_littoral_maps)){
+  list_stack_pacifico_dpto[[i]] <- lapply(rasters_pacifico, crop, pacific_littoral_maps[[i]])
 }
-list <- lapply(rasters_pacifico, x, pacific_littoral_maps)
+
+list_stack_pacifico_dpto <- lapply(list_stack_pacifico_dpto, stack)
+
+#Rasters masked by department (soory for the loops)
+list_stack_pacifico_dpto_mask <- list()
+for(i in names(pacific_littoral_maps)){
+  if(i == i){
+    list_stack_pacifico_dpto_mask[[i]] <- lapply(list_stack_pacifico_dpto[i], mask, pacific_littoral_maps[[i]])
+  }
+}
 
 #The same for elevation raster
 rasters_extent_pacifico <- extent(stack_pacifico)
@@ -62,25 +58,30 @@ elevation_pacifico <- crop(elevation, rasters_extent_pacifico)
 elevation_pacifico <- setExtent(elevation_pacifico, rasters_extent_pacifico)#The same for elevation raster
 elevation_pacifico <- mask(elevation_pacifico, pacific_littoral_map_dpto)
 
-#Distances
+#----------------------------------Distances-------------------------------------#
 #Create a distance raster (all distances to the nearest point)
 distance_raster <- distanceFromPoints(stack_pacifico_mask[[1]], black_communities_union_p)
-distance_raster_p <- as(distance_raster, "SpatialPixels")
+distance_raster2 <- distance(black_communities_rl) #rather quick than distance_raster and nearly equal results
+distance_raster_p <- as(distance_raster2, "SpatialPixels")
+distance_raster2_mask <- mask(distance_raster2, pacific_littoral_map_dpto)
+
+#We have to borders here: one border goes up to the mountain range (east) and one border to the west. 
+
 
 #Identify cells within the polygon
-cell_black_communities <- cellFromPolygon(distance_raster, black_communities_union)
+cell_black_communities <- cellFromPolygon(distance_raster2, black_communities_union)
 pixels_black_communities <- over(black_communities_union, distance_raster_p, returnList = T) 
 pixels_black_communities <- unlist(pixels_black_communities)
-#Select the relevant distances 
+
+#Select the "inside" distances
 black_communities_distance_raster <- rasterFromCells(distance_raster, unlist(pixels_black_communities), values=TRUE)
 
 #Extract elevation and light data for each pixel (1*1 km  grid approximately)
 stack_pacifico_dataframe <- extract(stack_pacifico_mask, seq_len(ncell(stack_pacifico_mask)), df=TRUE)
 elevation_dataframe <- extract(elevation_pacifico, seq_len(ncell(elevation_pacifico)), df=TRUE)
-distance_dataframe <- extract(distance_raster, seq_len(ncell(distance_raster)), df=TRUE)
+distance_dataframe <- extract(distance_raster2_mask, seq_len(ncell(distance_raster)), df=TRUE)
 merge_rasters_dataframes <- merge(distance_dataframe, stack_pacifico_dataframe, by="ID")
 merge_rasters_dataframes <- merge(merge_rasters_dataframes, elevation_dataframe, by="ID")
-
 
 
 #Average years with two rasters 
@@ -89,3 +90,5 @@ duplicated_years <- year_list[duplicated(year_list)]
 duplicated_rasters <- list_raster[lapply(list_raster, str_sub, 4, 7) %in% duplicated_years]
 
 
+
+merge_rasters_dataframes$layer[merge_rasters_dataframes$ID %in% unlist(cell_black_communities)] <- -1* (merge_rasters_dataframes$layer)

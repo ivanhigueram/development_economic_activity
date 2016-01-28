@@ -42,6 +42,12 @@ pacific_littoral_maps <- split(pacific_littoral_map_dpto, factor(pacific_littora
 #Filter only communities in the pacific littoral
 communities_littoral <- lapply(layers_reprojected, crop, pacific_littoral_map_dpto)
 
+#Filter communities by departments in the pacific littoral (1: black, 2: indigenous)
+communities_littoral_dpto <- list()
+for(i in names(pacific_littoral_maps)){
+  communities_littoral_dpto[[i]] <- lapply(layers_reprojected, crop, pacific_littoral_maps[[i]])
+}
+
 #Get black communities by year
 communities_littoral[[1]]@data$year <- str_extract(communities_littoral[[1]]@data$RESOLUCION, "[1-2][0, 9][0, 1, 9][0-9]")
 communities_littoral[[1]]@data$year <- as.factor(communities_littoral[[1]]@data$year)
@@ -52,5 +58,6 @@ black_communities_union <- gUnaryUnion(communities_littoral[[1]])
 black_communities_union_l <- as(black_communities_union, "SpatialLines")
 black_communities_union_p <- as(black_communities_union_l, "SpatialPoints")
 black_communities_r <- rasterize(black_communities_union, stack_pacifico_mask[[1]])
-
+black_communities_rl <- rasterize(black_communities_union_l, distance_raster)
+                                                                                
 
