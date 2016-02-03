@@ -44,13 +44,14 @@ for(i in names(pacific_littoral_maps)){
 
 list_stack_pacifico_dpto <- lapply(list_stack_pacifico_dpto, stack)
 
-#Rasters masked by department (soory for the loops)
+#Rasters masked by department (sorry for the loops)
 list_stack_pacifico_dpto_mask <- list()
 for(i in names(pacific_littoral_maps)){
   if(i == i){
     list_stack_pacifico_dpto_mask[[i]] <- lapply(list_stack_pacifico_dpto[i], mask, pacific_littoral_maps[[i]])
   }
 }
+rm(i)
 
 #The same for elevation raster
 rasters_extent_pacifico <- extent(stack_pacifico)
@@ -77,6 +78,20 @@ pixels_black_communities <- unlist(pixels_black_communities)
 
 #Select the "inside" distances
 black_communities_distance_raster <- rasterFromCells(distance_raster, unlist(pixels_black_communities), values=TRUE)
+
+#Distances to capitals (Cali, B/ventura, Quibdó, Popayan)
+capital_cities_maps <- lapply(capital_cities_maps, as, "SpatialPoints")
+capital_cities_maps <- lapply(capital_cities_maps, as, "SpatialPoints")
+
+capital_distance_raster <- list()
+for(i in capital_cities){
+  capital_distance_raster[[i]] <- distanceFromPoints(stack_pacifico_mask[[1]], capital_cities_maps[[i]])
+}
+capital_distance_raster_stack <- stack(capital_distance_raster)
+capital_distance_raster_centroid <- distanceFromPoints(stack_pacifico_mask[[1]], capital_cities_centroids)
+
+capital_distance_raster_stack <- stack(capital_distance_raster)
+
 
 #----------------------------------Extract------------------------------------------# 
 

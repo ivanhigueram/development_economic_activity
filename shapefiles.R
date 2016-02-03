@@ -51,7 +51,13 @@ for(i in names(pacific_littoral_maps)){
 #Get black communities by year
 communities_littoral[[1]]@data$year <- str_extract(communities_littoral[[1]]@data$RESOLUCION, "[1-2][0, 9][0, 1, 9][0-9]")
 communities_littoral[[1]]@data$year <- as.factor(communities_littoral[[1]]@data$year)
-levels(commun ities_littoral[[1]]@data$year)[levels(communities_littoral[[1]]@data$year)==2919] <- "2012"
+levels(communities_littoral[[1]]@data$year)[levels(communities_littoral[[1]]@data$year)==2919] <- "2012"
+
+#Filter capital cities (for distance calculations)
+capital_cities <- c("CALI", "BUENAVENTURA", "QUIBDÓ", "POPAYÁN", "PASTO")
+capital_cities_map <- pacific_littoral_map_muni[pacific_littoral_map_muni@data$NOM_MUNICI %in% capital_cities, ]
+capital_cities_maps <- split(capital_cities_map, factor(capital_cities_map@data$NOM_MUNICI))
+capital_cities_centroids <- gCentroid(capital_cities_map, byid=T)
 
 #Join black communities territories
 black_communities_union <- gUnaryUnion(communities_littoral[[1]])
@@ -60,4 +66,5 @@ black_communities_union_p <- as(black_communities_union_l, "SpatialPoints")
 black_communities_r <- rasterize(black_communities_union, stack_pacifico_mask[[1]])
 black_communities_rl <- rasterize(black_communities_union_l, distance_raster)
                                                                                 
+
 
