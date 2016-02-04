@@ -64,7 +64,7 @@ black_communities_union <- gUnaryUnion(communities_littoral[[1]])
 black_communities_union_l <- as(black_communities_union, "SpatialLines")
 black_communities_union_p <- as(black_communities_union_l, "SpatialPoints")
 black_communities_r <- rasterize(black_communities_union, stack_pacifico_mask[[1]])
-black_communities_rl <- rasterize(black_communities_union_l, distance_raster)
+black_communities_rl <- rasterize(black_communities_union_l, distance_raster_mask)
                                                                                 
 
 

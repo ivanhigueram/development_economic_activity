@@ -16,8 +16,8 @@ plot(communities_littoral[[1]], col="coral")
 plot(pacific_littoral_map_dpto, add=T)
 
 #Map of lights over the Pacific littoral (rasters is a list of the rasters for the all the years)
-png("litoral_distancias.jpeg", width = 8.5, height = 11, units = 'in', res = 1000)
-plot(distance_raster)
+png("litoral_distancias.jpeg", width = 8.5, height = 11, units = 'in', res = 500)
+plot(distance_raster_mask)
 plot(black_communities_union, border="red", lwd=1, add=T)
 dev.off()
 
@@ -26,7 +26,7 @@ lapply(rasters_pacifico, KML)
 
 #Plot distance raster
 png("litoral_distancias.jpeg", width = 8.5, height = 11, units = 'in', res = 1000)
-plot(distance_raster, main="Distancias a los territorios comunitarios")
+plot(distance_raster_mask, main="Distancias a los territorios comunitarios")
 plot(black_communities_union, border="red", lwd=1, add=T)
 plot(pacific_littoral_map_dpto, add=T)
 dev.off()
