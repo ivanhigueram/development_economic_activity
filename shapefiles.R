@@ -59,10 +59,21 @@ capital_cities_map <- pacific_littoral_map_muni[pacific_littoral_map_muni@data$N
 capital_cities_maps <- split(capital_cities_map, factor(capital_cities_map@data$NOM_MUNICI))
 capital_cities_centroids <- gCentroid(capital_cities_map, byid=T)
 
-#Join black communities territories
-black_communities_union <- gUnaryUnion(communities_littoral[[1]])
+#Join black communities territories (remember we have exported another spatial join)
+black_communities_union <- gUnaryUnion(communities_littoral[[1]]) #R Union - deprecated option 
+
+#Clear holes from polygon (thanks Roger Bivand)
+BCp <- slot(black_communities_union, "polygons") 
+holes <- lapply(BCp, function(x) sapply(slot(x, "Polygons"), slot, "hole")) 
+res <- lapply(1:length(BCp), function(i) slot(BCp[[i]], "Polygons")[!holes[[i]]]) 
+IDs <- row.names(black_communities_union) 
+black_communities_union <- SpatialPolygons(lapply(1:length(res), function(i) Polygons(res[[i]], ID=IDs[i])), proj4string=CRS(proj4string(black_communities_union))) 
+
+#Transform union to lines and points 
 black_communities_union_l <- as(black_communities_union, "SpatialLines")
 black_communities_union_p <- as(black_communities_union_l, "SpatialPoints")
+
+#Once you have run the raster script, you can run these. 
 black_communities_r <- rasterize(black_communities_union, stack_pacifico_mask[[1]])
 black_communities_rl <- rasterize(black_communities_union_l, distance_raster_mask)
                                                                                 

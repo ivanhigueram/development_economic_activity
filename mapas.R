@@ -21,6 +21,12 @@ plot(distance_raster_mask)
 plot(black_communities_union, border="red", lwd=1, add=T)
 dev.off()
 
+#Plot elevation, aspect and hill 
+plot(hills_pacifico, col = grey(0:100/100), legend = F, main = "Elevación litoral pacífico")
+plot(elevation_pacifico, col = rainbow(25, alpha = 0.35), add = T)
+plot(pacific_littoral_map_dpto, add = T)
+plot(black_communities_union, add= T, border= "grey")
+
 #Export to KML files
 lapply(rasters_pacifico, KML)
 
