@@ -43,6 +43,7 @@ population_pacifico <- lapply(population_rasters, crop, pacific_littoral_map_mun
 population_pacifico <- lapply(population_pacifico, setExtent, rasters_extent_pacifico)
 stack_population_pacifico <- stack(population_pacifico)
 stack_population_pacifico <- mask(stack_population_pacifico, pacific_littoral_map_muni)
+stack_population_pacifico <- resample(stack_population_pacifico, stack_pacifico_mask)
 
 #Once cropped, you can mask the rasters to include all the pixels within the Pacific littoral (if the centroid of the pixel is outside the litroral, its value is set to NA)
 stack_pacifico_mask <- mask(stack_pacifico, pacific_littoral_map_dpto)
@@ -73,6 +74,7 @@ elevation_pacifico <- mask(elevation_pacifico, pacific_littoral_map_dpto)
 slope_pacifico <- terrain(elevation_pacifico, opt = "slope")
 aspect_pacifico <- terrain(elevation_pacifico, opt = "aspect")
 hills_pacifico <- hillShade(slope_pacifico, aspect_pacifico, angle = 40, 0)
+names(hills_pacifico) <- "hill"
 roughness_pacifico <- terrain(elevation_pacifico, opt = "roughness")
 
 #----------------------------------Distances-------------------------------------#
@@ -105,12 +107,17 @@ names(capital_distance_raster_centroid_mask) <- "dist_capital"
 pacific_littoral_map_muni@data$ID_ESPACIA <- as(pacific_littoral_map_muni@data$ID_ESPACIA, "numeric")
 pacific_littoral_map_muni_r <- rasterize(pacific_littoral_map_muni, distance_raster_p_mask, 
                                          field = c(pacific_littoral_map_muni$ID_ESPACIA))
+pacific_littoral_map_dpto@data$Group.1 <- as(pacific_littoral_map_dpto@data$Group.1, "factor")
+pacific_littoral_map_dpto_r <- rasterize(pacific_littoral_map_dpto, distance_raster_p_mask, 
+                                         field = c(pacific_littoral_map_dpto$Group.1))
+
 names(pacific_littoral_map_muni_r) <- "municode"
+names(pacific_littoral_map_dpto_r) <- "dptocode"
 
 #----------------------------------Extract------------------------------------------# 
 
 #Extract elevation and light data for each pixel (1*1 km  grid approximately)
-raster_dataframes_list <- list(stack_pacifico_mask, elevation_pacifico, distance_raster_mask, capital_distance_raster_centroid_mask, pacific_littoral_map_muni_r, slope_pacifico, aspect_pacifico, hills_pacifico, roughness_pacifico, distance_raster_p_mask)
+raster_dataframes_list <- list(stack_pacifico_mask, elevation_pacifico, distance_raster_mask, capital_distance_raster_centroid_mask, pacific_littoral_map_muni_r, pacific_littoral_map_dpto_r, slope_pacifico, aspect_pacifico, hills_pacifico, roughness_pacifico, distance_raster_p_mask, stack_population_pacifico)
 dataframes_extract <- lapply(raster_dataframes_list, raster::extract, seq_len(ncell(stack_pacifico_mask)), df=TRUE)
 
 #Merge
@@ -136,8 +143,14 @@ for(i in duplicated_years){
     merge_rasters_dataframes[, i] <- rowMeans(merge_rasters_dataframes[, which(names(merge_rasters_dataframes) == i) : which(names(merge_rasters_dataframes) == str_c(i, 1, sep = "."))])
 } 
 merge_rasters_dataframes <- merge_rasters_dataframes[, -which(names(merge_rasters_dataframes) %in% duplicated_years2)]
+names(merge_rasters_dataframes)[1:22] <- str_c("dm", names(merge_rasters_dataframes)[1:22])
+
+#Modify variables
+merge_rasters_dataframes$dptocode <- as.factor(merge_rasters_dataframes$dptocode)
+merge_rasters_dataframes$municode <- as.factor(merge_rasters_dataframes$municode)
+merge_rasters_dataframes$treatment <- as.factor(ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, 0))
 
 #Export to Stata
-require(foreign)
+require(foreign) s
 write.dta(merge_rasters_dataframes, "merge_rasters_dataframes.dta")
 
