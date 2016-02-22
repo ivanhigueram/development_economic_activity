@@ -33,6 +33,7 @@ rasters_extent <- extent(rasters[[1]]) #We need to put all rasters into the same
 rasters <- lapply(rasters, setExtent, rasters_extent)
 rasters_pacifico <- lapply(rasters, crop, pacific_littoral_map_muni)
 stack_pacifico <- stack(rasters_pacifico) #Stack them!
+stack_pacifico_mask <- mask(stack_pacifico, pacific_littoral_map_dpto)
 
 #NASA Population data (no download script :[ )
 rasters_extent_pacifico <- extent(stack_pacifico)
@@ -44,9 +45,6 @@ population_pacifico <- lapply(population_pacifico, setExtent, rasters_extent_pac
 stack_population_pacifico <- stack(population_pacifico)
 stack_population_pacifico <- mask(stack_population_pacifico, pacific_littoral_map_muni)
 stack_population_pacifico <- resample(stack_population_pacifico, stack_pacifico_mask)
-
-#Once cropped, you can mask the rasters to include all the pixels within the Pacific littoral (if the centroid of the pixel is outside the litroral, its value is set to NA)
-stack_pacifico_mask <- mask(stack_pacifico, pacific_littoral_map_dpto)
 
 #Rasters cropped by department
 list_stack_pacifico_dpto <- list()
@@ -97,8 +95,7 @@ names(distance_raster_p_mask) <- "dist_f"
 #Identify cells within the polygon
 cell_black_communities <- cellFromPolygon(distance_raster_p_mask, black_communities_union)
 
-#Distances to capitals (Cali, B/ventura, Quibdó, Popayan, Pasto)
-#To centroid
+#Distances to capitals (Cali, B/ventura, Quibdó, Popayan, Pasto) [To centroid]
 capital_distance_raster_centroid <- distanceFromPoints(stack_pacifico_mask[[1]], capital_cities_centroids)
 capital_distance_raster_centroid_mask <- mask(capital_distance_raster_centroid, pacific_littoral_map_dpto)
 names(capital_distance_raster_centroid_mask) <- "dist_capital"
@@ -128,8 +125,8 @@ merge_rasters_dataframes_clean <- complete.cases(merge_rasters_dataframes)
 merge_rasters_dataframes <- merge_rasters_dataframes[merge_rasters_dataframes_clean, ]
 
 #Get negative distances from cells inside the collective territories (community)
-merge_rasters_dataframes$dist_p <- ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), -1, 1) * merge_rasters_dataframes$dist_p
-merge_rasters_dataframes$dist_f <- ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), -1, 1) * merge_rasters_dataframes$dist_f
+merge_rasters_dataframes$dist_p <- ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, -1) * merge_rasters_dataframes$dist_p
+merge_rasters_dataframes$dist_f <- ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, -1) * merge_rasters_dataframes$dist_f
 
 #Average years with two rasters
 names(merge_rasters_dataframes)[2:36] <- lapply(names(merge_rasters_dataframes)[2:36], str_sub, 4, 7)
@@ -149,8 +146,11 @@ names(merge_rasters_dataframes)[1:22] <- str_c("dm", names(merge_rasters_datafra
 merge_rasters_dataframes$dptocode <- as.factor(merge_rasters_dataframes$dptocode)
 merge_rasters_dataframes$municode <- as.factor(merge_rasters_dataframes$municode)
 merge_rasters_dataframes$treatment <- as.factor(ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, 0))
+merge_rasters_dataframes$dmpooled <- rowSums(merge_rasters_dataframes[, c(5:22)])
+merge_rasters_dataframes$dmpooled92_96 <- rowSums(merge_rasters_dataframes[, c(1:5)])
+
 
 #Export to Stata
-require(foreign) s
+require(foreign)
 write.dta(merge_rasters_dataframes, "merge_rasters_dataframes.dta")
 
