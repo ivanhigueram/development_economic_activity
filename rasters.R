@@ -151,6 +151,7 @@ merge_rasters_dataframes$dmpooled92_96 <- rowSums(merge_rasters_dataframes[, c(1
 
 
 #Export to Stata
+setwd("/Volumes/LaCie/Datos") 
 require(foreign)
 write.dta(merge_rasters_dataframes, "merge_rasters_dataframes.dta")
 

@@ -17,14 +17,8 @@ merge_rasters_3km <- filter(merge_rasters_dataframes, dist_f<3000, dist_f>-3000)
 merge_rasters_1km <- filter(merge_rasters_dataframes, dist_f<1000, dist_f>-1000) 
 
 #Parametric estimation (different polynomials - using both lm() and RDDtool package)
-#RDD Tools
 
-discontinuity_data <- RDDdata(x = dist_p, 
-                              y = dmpooled,
-                              data = merge_rasters_dataframes,
-                              covar = covariates_df,
-                              cutpoint = 0)
-
+#Non-bandwidth estimators
 #First order polynomial
 parametric1 <- lm(dmpooled ~ treatment + dist_p , data = merge_rasters_dataframes)
 parametric1_c <- lm(dmpooled ~ treatment + dist_p + altura_mean_30arc + aspect + slope + hill + dist_capital, 
@@ -33,6 +27,7 @@ parametric1_cc <- lm(dmpooled ~ treatment + dist_p + altura_mean_30arc + aspect 
                     + factor(dptocode) + factor(municode),
                      data = merge_rasters_dataframes)
 robust1 <- coeftest(parametric1_cc, vcov = vcovHC(parametric1_cc, "HC1"))
+robust1.se <- vcovHC(parametric1_cc, type = "HC1")
 
 #Second order polynomial
 parametric2 <- lm(dmpooled ~ treatment + poly(dist_p, 2) , data = merge_rasters_dataframes)
@@ -42,6 +37,7 @@ parametric2_cc <- lm(dmpooled ~ treatment + poly(dist_p, 2) + altura_mean_30arc 
                      + factor(dptocode) + factor(municode),
                      data = merge_rasters_dataframes)
 robust2 <- coeftest(parametric2_cc, vcov = vcovHC(parametric2_cc, "HC1"))
+robust2.se <- vcovHC(parametric2_cc, type = "HC1")
 
 #Third order polynomial
 parametric3 <- lm(dmpooled ~ treatment + poly(dist_p, 3) , data = merge_rasters_dataframes)
@@ -50,7 +46,29 @@ parametric3_c <- lm(dmpooled ~ treatment + poly(dist_p, 3) + altura_mean_30arc +
 parametric3_cc <- lm(dmpooled ~ treatment + poly(dist_p, 3) + altura_mean_30arc + aspect + slope + hill + dist_capital 
                      + factor(dptocode) + factor(municode),
                      data = merge_rasters_dataframes)
-robust3 <- coeftest(parametric2_cc, vcov = vcovHC(parametric2_cc, "HC1"))
+robust3 <- coeftest(parametric3_cc, vcov = vcovHC(parametric2_cc, "HC1"))
+robust3.se <- vcovHC(parametric3_cc, type = "HC1")
+
+stargazer(parametric1_cc, parametric2_cc, parametric3_cc, 
+          title = "Estimación paramétrica con años agregados (1996 - 2013)",
+          dep.var.caption = "Años agregados", dep.var.labels = "1996-2013",
+          column.labels = c("Primer grado", "Segundo grado", "Tercer grado"),
+          covariate.labels = c("Efecto del tratamiento"),
+          se = list(robust1.se, robust2.se, robust3.se),
+          omit = c("[a-z][:(:]", "[a-z][:(:]", "dist_p"), keep = c("treatment1"),
+          omit.labels = c("Efectos fijos municipio", "Efectos fijos departamento", "Controles"),
+          omit.stat = c("rsq"), df = F, notes.label = "Nota: ", notes.align = "c", 
+          initial.zero = F
+          )
+#Bandwidth (2.5 km around cutoff value)          
+#RDD Tools
+discontinuity_data <- RDDdata(x = dist_p, 
+                              y = dmpooled,
+                              data = merge_rasters_dataframes,
+                              cutpoint = 0)
+
+reg_para <- RDDreg_lm(discontinuity_data, order = 1)
+
 
 #rdtools
 
