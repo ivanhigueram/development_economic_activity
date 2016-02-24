@@ -145,9 +145,20 @@ names(merge_rasters_dataframes)[1:22] <- str_c("dm", names(merge_rasters_datafra
 #Modify variables
 merge_rasters_dataframes$dptocode <- as.factor(merge_rasters_dataframes$dptocode)
 merge_rasters_dataframes$municode <- as.factor(merge_rasters_dataframes$municode)
-merge_rasters_dataframes$treatment <- as.factor(ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, 0))
+merge_rasters_dataframes$treatment <- as.numeric(ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, 0))
 merge_rasters_dataframes$dmpooled <- rowSums(merge_rasters_dataframes[, c(5:22)])
 merge_rasters_dataframes$dmpooled92_96 <- rowSums(merge_rasters_dataframes[, c(1:5)])
+
+#Reshape dataframe (wide to long)
+merge_rasters_dataframes_long <- reshape(merge_rasters_dataframes,
+                                         varying = names(merge_rasters_dataframes)[1:22],
+                                         timevar = "year",
+                                         idvar = "ID",
+                                         direction = "long",
+                                         sep = "")
+attach(merge_rasters_dataframes_long)
+merge_rasters_dataframes_long <- merge_rasters_dataframes_long[order(ID, year), ]
+detach(merge_rasters_dataframes_long)
 
 
 #Export to Stata
