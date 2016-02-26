@@ -74,6 +74,7 @@ aspect_pacifico <- terrain(elevation_pacifico, opt = "aspect")
 hills_pacifico <- hillShade(slope_pacifico, aspect_pacifico, angle = 40, 0)
 names(hills_pacifico) <- "hill"
 roughness_pacifico <- terrain(elevation_pacifico, opt = "roughness")
+flowdir_pacifico <- terrain(elevation_pacifico, opt = "flowdir")
 
 #----------------------------------Distances-------------------------------------#
 #Create a distance raster (all distances to the nearest point)
@@ -165,4 +166,4 @@ detach(merge_rasters_dataframes_long)
 setwd("/Volumes/LaCie/Datos") 
 require(foreign)
 write.dta(merge_rasters_dataframes, "merge_rasters_dataframes.dta")
-
+write.dta(merge_rasters_dataframes_long, "merge_rasters_dataframes_long.dta")
