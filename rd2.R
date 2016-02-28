@@ -1,5 +1,4 @@
 
-
 #Table 1: Treatment year (1997) with parametric estimators and controls  
 
 #Non-bandwidth estimators - possible treatment years (97)
@@ -112,4 +111,5 @@ stargazer(parametric500m_cc_t, parametric1km_cc_t, parametric2km_cc_t,
           omit.labels = c("Efectos fijos municipio", "Efectos fijos departamento", "Controles"),
           omit.stat = c("rsq", "ser"), df = F, notes.label = "Nota: ", notes.align = "c", 
           initial.zero = F)
+
 

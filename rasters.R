@@ -109,9 +109,15 @@ pacific_littoral_map_dpto@data$Group.1 <- as(pacific_littoral_map_dpto@data$Grou
 pacific_littoral_map_dpto_r <- rasterize(pacific_littoral_map_dpto, distance_raster_p_mask, 
                                          field = c(pacific_littoral_map_dpto$Group.1))
 
+black_communities_littoral <- communities_littoral[[1]]
+black_communities_littoral@data$year <- as(black_communities_littoral@data$year, "numeric")
+black_communities_littoral_r <- rasterize(black_communities_littoral, distance_raster_p_mask, 
+                                          field = c(black_communities_littoral@data$year))
+
+
 names(pacific_littoral_map_muni_r) <- "municode"
 names(pacific_littoral_map_dpto_r) <- "dptocode"
-
+names(black_communities_littoral_r) <- "year_resolution"
 #----------------------------------Extract------------------------------------------# 
 
 #Extract elevation and light data for each pixel (1*1 km  grid approximately)

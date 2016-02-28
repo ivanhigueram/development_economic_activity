@@ -1,5 +1,6 @@
 library(dismo)
 library(rasterVis)
+library(animation)
 
 #Maps
 setwd("~/Dropbox/BANREP/Pacifico/Primer_DTSER/Mapas_Graficos")
@@ -36,4 +37,34 @@ plot(distance_raster_mask, main="Distancias a los territorios comunitarios")
 plot(black_communities_union, border="red", lwd=1, add=T)
 plot(pacific_littoral_map_dpto, add=T)
 dev.off()
+
+#Nighlights raster animation
+saveGIF({
+  ani.options(interval = 1, nmax = 35)
+  for(i in c(1:35)){
+    plot(stack_pacifico_mask[[i]], col=grey.colors(100))
+    plot(pacific_littoral_map_dpto, add = T, main = "Luminosidad por año")
+  }
+}, movie.name = "light.gif", ani.width = 800, ani.height = 1000)
+
+saveLatex({
+  ani.options(interval = 1, nmax = 35)
+  for(i in c(1:35)){
+    plot(stack_pacifico_mask[[i]], col=grey.colors(100))
+    plot(pacific_littoral_map_dpto, add = T, main = "Luminosidad por año")
+  }
+}, nmax = 35, interval = 0.5, img.name = "dm_plot",
+latex.filename = ifelse(interactive(), "dm_plot_year.tex"))
+
+
+#Map of lights over the Pacific littoral (rasters is a list of the rasters for the all the years)
+littoral_lights2013 <- mask(rasters_pacifico[[35]], pacific_littoral_map)
+png("litoral_comunidades_2013_municipios.jpeg", width = 8.5, height = 11, units = 'in', res = 1000)
+plot(littoral_lights2013, col=grey.colors(100))
+plot(layers_reprojected[[1]], add=T,  boder="blue", lwd=)
+plot(pacific_littoral_map, lwd=2, border= "red", lwd=1, add=T)
+dev.off()
+
+
+
 

@@ -25,13 +25,12 @@ merge_rasters_200m <- filter(merge_rasters_dataframes, dist_p<200, dist_p>-200)
 #Bandwidth (2.5 km around cutoff value)          
 #RDD Tools
 discontinuity_data <- RDDdata(x = dist_p,
-                              y = dmpooled,
-                              data = merge_rasters_300m,
-                              covar = covariates_df,
+                              y = dm1997,
+                              data = merge_rasters_dataframes,
                               cutpoint = 0) 
 
-reg_para <- RDDreg_lm(discontinuity_data)
-
+reg_para <- RDDreg_lm(discontinuity_data, order = 3)
+reg_nonpara <- RDDreg_np(discontinuity_data)
 
 #rdtools
 
@@ -40,10 +39,8 @@ bw_ik <- RDDbw_IK(discontinuity_data)
 reg_nonpara <- RDDreg_np(RDDobject = discontinuity_data, bw = bw_ik)
 
 #rdrobust pacakge
-rdrobust_bw <- list()
 attach(merge_rasters_dataframes) 
-rdrobust_bw <- mapply(rdrobust(x = dist_p, y = dm2013, fuzzy = altura_mean_30arc ,subset = dptocode == 13))
-
+rdrobust(x = dist_p, y = dm1997)
 attach(merge_rasters_dataframes)
 
 rdplot <- rdplot(dm1997, dist_p, c = 0,
@@ -74,13 +71,12 @@ rdbwselect(y = merge_rasters_dataframes$`1992`,
 
 #rdd package
 
-rdestimate <- RDestimate(dm2013 ~ dist_p + altura_mean_30arc ,
+rdestimate <- RDestimate(dm1992 ~ dist_p,
                          data = merge_rasters_dataframes,
-                         subset = merge_rasters_dataframes$dptocode == "13",
                          cutpoint = 0, verbose = T)
 
 plot(rdestimate)
 
 
-rdrobust <- rdrobust(y = merge_rasters_dataframes$dm2pooled,
+rdrobust <- rdrobust(y = merge_rasters_dataframes$dm1992,
                      x = merge_rasters_dataframes$dist_p , c=0, all=T)
