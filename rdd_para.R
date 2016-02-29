@@ -70,46 +70,49 @@ stargazer(parametric1_cc_t, parametric2_cc_t, parametric3_cc_t, parametric4_cc_t
 
 #Table 3: Treatment year (1997) with parametric estimators and controls - bw = 500 m, 1km and 2km only with first and second degree polynomials
 
-parametric1km_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) , data = merge_rasters_1km)
+parametric1km_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) , data = merge_rasters_bw[[6]])
 parametric1km_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
-                      data = merge_rasters_1km)
+                      data = merge_rasters_bw[[6]])
 parametric1km_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital 
                        + factor(dptocode) + factor(municode),
-                       data = merge_rasters_1km)
-robustclust1km.se_t <- cluster.vcov(parametric1km_cc_t, merge_rasters_1km$municode)
+                       data = merge_rasters_bw[[6]])
+robustclust1km.se_t <- vcovHC(parametric1km_cc_t, "HC1")
 robustclust1km_t <- coeftest(parametric1km_cc_t, robustclust1km.se_t)[, 4]
 
 
-parametric500m_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) , data = merge_rasters_1km)
+parametric500m_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) , data =  merge_rasters_bw[[5]])
 parametric500m_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
-                        data = merge_rasters_500m)
+                        data =  merge_rasters_bw[[5]])
 parametric500m_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital 
                          + factor(dptocode) + factor(municode),
-                         data = merge_rasters_500m)
-robustclust500m.se_t <- cluster.vcov(parametric500m_cc_t, merge_rasters_500m$municode)
+                         data =  merge_rasters_bw[[5]])
+robustclust500m.se_t <- vcovHC(parametric500m_cc_t, "HC1")
 robustclust500m_t <- coeftest(parametric500m_cc_t, robustclust500m.se_t)[, 4]
 
 
-parametric2km_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) , data = merge_rasters_2km)
+parametric2km_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) , data = merge_rasters_bw[[8]])
 parametric2km_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
-                        data = merge_rasters_2km)
-parametric2km_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital 
+                        data = merge_rasters_bw[[8]])
+parametric2km_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 2) + altura_mean_30arc + aspect + slope + hill + dist_capital 
                          + factor(dptocode) + factor(municode),
-                         data = merge_rasters_2km)
-robustclust2km.se_t <- cluster.vcov(parametric2km_cc_t, merge_rasters_2km$municode)
+                         data = merge_rasters_bw[[8]])
+robustclust2km.se_t <- vcovHC(parametric2km_cc_t, "HC1")
 robustclust2km_t <- coeftest(parametric2km_cc_t, robustclust2km.se_t)[, 4]
 
 
 stargazer(parametric500m_cc_t, parametric1km_cc_t, parametric2km_cc_t,
-          title = "Estimación paramétrica en año de tratamiento corregida por clusters - 1994",
+          title = "Estimación paramétrica en año de tratamiento - 1997",
           dep.var.caption = "Densidad de luz por ventanas (bw)", dep.var.labels = "Tratamiento",
           column.labels = c("bw = 500 m.", "bw = 1km.", "bw = 2 km."),
           covariate.labels = c("Diferencia"),
-          se = list(robustclust1.se_t, robustclust2.se_t, robustclust3.se_t, robustclust4.se_t),
+          se = list(robustclust500m.se_t, robustclust1km.se_t, robustclust2km.se_t),
           p = list(robustclust500m_t, robustclust1km_t, robustclust2km_t),
           omit = c("[a-z][:(:]", "[a-z][:(:]", "dist_p"), keep = c("treatment"),
           omit.labels = c("Efectos fijos municipio", "Efectos fijos departamento", "Controles"),
           omit.stat = c("rsq", "ser"), df = F, notes.label = "Nota: ", notes.align = "c", 
           initial.zero = F)
+
+
+
 
 

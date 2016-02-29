@@ -1,9 +1,7 @@
-library(plm)
 #RDD panel 
 #Create lagged variable
 library(DataCombine)
-merge_rasters_dataframes_long <- slide(merge_rasters_dataframes_long
-                                       , Var = "dm", GroupVar = "ID", slideBy = -1)
+library(plm)
 
 #Treatment variable within time and space
 merge_rasters_dataframes_long$treatment_t <- as.numeric(ifelse(merge_rasters_dataframes_long$year > 1996, 1, 0))
@@ -12,7 +10,7 @@ merge_rasters_dataframes_long$treatment_tp <- with(merge_rasters_dataframes_long
 #Subset dataframe by year and windows of treatment (bw)
 merge_rasters_long_bw <- list()
 for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000)){
-  merge_rasters_long_bw[[i]] <- filter(merge_rasters_dataframes_long, dist_p < i, dist_p > -i) 
+  merge_rasters_long_bw[[str_c(i)]] <- filter(merge_rasters_dataframes_long, dist_p < i, dist_p > -i) 
 }
 
 merge_rasters_long_year <- list()
@@ -24,65 +22,105 @@ merge_rasters_long_treatment <- filter(merge_rasters_dataframes_long, year > 199
 merge_rasters_long_notreatment <- filter(merge_rasters_dataframes_long, year < 1997)
 
 #Panel tables
-#Table 4: Panel treatment with clusters
+#Table 4: Panel treatment robust
 
 panel_1 <- lm(dm ~  treatment  + poly(dist_p, 1) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
                 factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_treatment)
 panelclust1 <- cluster.vcov(panel_1, merge_rasters_long_treatment$municode) 
-panelclust1_coef <- coeftest(panel_1, panelclust2)
+panelrobust1 <- vcovHC(panel_1, "HC1")
+panelclust1_coef <- coeftest(panel_1, panelclust1)
+panelrobust1_coef <- coeftest(panel_1, panelrobust1)[, 4]
+
 
 panel_2 <- lm(dm ~  treatment  + poly(dist_p, 2) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
                 factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_treatment)
 panelclust2 <- cluster.vcov(panel_2, merge_rasters_long_treatment$municode) 
+panelrobust2 <- vcovHC(panel_2, "HC1")
 panelclust2_coef <- coeftest(panel_2, panelclust2)
+panelrobust2_coef <- coeftest(panel_2, panelrobust2)[, 4]
 
 panel_3 <- lm(dm ~  treatment  + poly(dist_p, 3) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
                 factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_treatment)
 panelclust3 <- cluster.vcov(panel_3, merge_rasters_long_treatment$municode) 
+panelrobust3 <- vcovHC(panel_3, "HC1")
 panelclust3_coef <- coeftest(panel_3, panelclust3)
+panelrobust3_coef <- coeftest(panel_3, panelrobust3)[, 4]
 
 panel_4 <- lm(dm ~  treatment  + poly(dist_p, 4) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
                 factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_treatment)
 panelclust4 <- cluster.vcov(panel_4, merge_rasters_long_treatment$municode) 
+panelrobust4 <- vcovHC(panel_4, "HC1")
 panelclust4_coef <- coeftest(panel_4, panelclust4)
+panelrobust4_coef <- coeftest(panel_4, panelrobust4)[, 4]
+
+stargazer(panel_1, panel_2, panel_3, panel_4, 
+          title = "Estimación paramétrica panel (1997 - 2013)",
+          dep.var.caption = "Densidad de luz en todo el litoral", dep.var.labels = "Tratamiento",
+          column.labels = c("Primer grado", "Segundo grado", "Tercer grado", "Cuarto grado"),
+          covariate.labels = c("Diferencia"),
+          se = list(panelrobust1, panelrobust2, panelrobust3, panelrobust4),
+          p = list(panelrobust1_coef, panelrobust2_coef, panelrobust3_coef, panelrobust4_coef),
+          omit = c("[a-z][:(:]", "[a-z][:(:]", "dist_p", "[:dm:]"), keep = c("treatment"),
+          omit.labels = c("Efectos fijos municipio", "Efectos fijos departamento", "Controles", "Efectos panel"),
+          omit.stat = c("rsq", "adj.rsq", "ser"), keep.stat = c("n", "f", "aic"),df = F, notes.label = "Nota: ", notes.align = "c",
+          initial.zero = F
+)
 
 
+#Panel 5: Panel no treatment years
+panel_1nt <- lm(dm ~  treatment  + poly(dist_p, 1) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
+                factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_notreatment)
+panelclust1 <- cluster.vcov(panel_1, merge_rasters_long_treatment$municode) 
+panelrobust1 <- vcovHC(panel_1, "HC1")
+panelclust1_coef <- coeftest(panel_1, panelclust1)
+panelrobust1_coef <- coeftest(panel_1, panelrobust1)[, 4]
 
 
-#Panel analysis (pooled all years) - no treatment
-panel_bw <- lapply(merge_rasters_long_bw, function(x){
-  lm(dm ~  treatment_tp  + poly(dist_p, 1) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
-       factor(dptocode) + factor(municode) + factor(year), data = x)
-})
+panel_2nt <- lm(dm ~  treatment  + poly(dist_p, 2) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
+                factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_notreatment)
+panelclust2 <- cluster.vcov(panel_2, merge_rasters_long_treatment$municode) 
+panelrobust2 <- vcovHC(panel_2, "HC1")
+panelclust2_coef <- coeftest(panel_2, panelclust2)
+panelrobust2_coef <- coeftest(panel_2, panelrobust2)[, 4]
 
-panel_1 <- lm(dm ~  treatment_tp  + poly(dist_p, 2) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
-                 factor(dptocode) + factor(municode) + factor(year), 
-              data = merge_rasters_dataframes_long, 
-              subset = year > 1997)
-           
-robustclust1.se <- cluster.vcov(plm_100, merge_rasters_dataframes_long$municode) 
-robustclust1 <- coeftest(plm_100, robustclust1.se) 
+panel_3nt <- lm(dm ~  treatment  + poly(dist_p, 3) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
+                factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_notreatment)
+panelclust3 <- cluster.vcov(panel_3, merge_rasters_long_treatment$municode) 
+panelrobust3 <- vcovHC(panel_3, "HC1")
+panelclust3_coef <- coeftest(panel_3, panelclust3)
+panelrobust3_coef <- coeftest(panel_3, panelrobust3)[, 4]
+
+panel_4nt <- lm(dm ~  treatment  + poly(dist_p, 4) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
+                factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_nolong_treatment)
+panelclust4 <- cluster.vcov(panel_4, merge_rasters_long_treatment$municode) 
+panelrobust4 <- vcovHC(panel_4, "HC1")
+panelclust4_coef <- coeftest(panel_4, panelclust4)
+panelrobust4_coef <- coeftest(panel_4, panelrobust4)[, 4]
+
+stargazer(panel_1, panel_2, panel_3, panel_4, 
+          title = "Estimación paramétrica panel (1997 - 2013)",
+          dep.var.caption = "Densidad de luz en todo el litoral", dep.var.labels = "Tratamiento",
+          column.labels = c("Primer grado", "Segundo grado", "Tercer grado", "Cuarto grado"),
+          covariate.labels = c("Diferencia"),
+          se = list(panelrobust1, panelrobust2, panelrobust3, panelrobust4),
+          p = list(panelrobust1_coef, panelrobust2_coef, panelrobust3_coef, panelrobust4_coef),
+          omit = c("[a-z][:(:]", "[a-z][:(:]", "dist_p", "[:dm:]"), keep = c("treatment"),
+          omit.labels = c("Efectos fijos municipio", "Efectos fijos departamento", "Controles", "Efectos panel"),
+          omit.stat = c("rsq", "adj.rsq", "ser"), keep.stat = c("n", "f", "aic"),df = F, notes.label = "Nota: ", notes.align = "c",
+          initial.zero = F
+)
 
 
-panel.set <- plm.data(merge_rasters_long_200m, index = c("ID", "year"))
-plm_200 <- plm(dm ~  treatment_tp * factor(dptocode) + poly(dist_p, 1) + factor(year), 
-               data = panel.set, model = "within", effect = c("twoway"))
+#Table 5: Panel using windows of treatment (bw = 100 m - 2000 m)
+independent <- list("treatment", "poly(dist_p, 1)",  "altura_mean_30arc", "aspect", "slope", "hill", "dist_capital", "factor(dptocode)", "factor(municode)", "factor(year)")
 
-panel.set <- plm.data(merge_rasters_long_300m, index = c("ID", "year"))
-plm_300 <- plm(dm ~  treatment_tp * factor(dptocode) + poly(dist_p, 1) + factor(year), 
-               data = panel.set, model = "within")
-
-panel.set <- plm.data(merge_rasters_long_400m, index = c("ID", "year"))
-plm_400 <- plm(dm ~  treatment_tp * factor(dptocode) + poly(dist_p, 1) + factor(year), 
-               data = panel.set, model = "within")
-
-panel.set <- plm.data(merge_rasters_long_500m, index = c("ID", "year"))
-plm_500 <- plm(dm ~  treatment_tp + poly(dist_p, 1), 
-               data = panel.set, model = "within", effect = c("twoway"))
+panel_bw <- lapply(merge_rasters_long_bw, lm, 
+  formula = dm ~  treatment_tp  + poly(dist_p, 1) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
+       factor(dptocode) + factor(municode) + factor(year))
 
 
-stargazer(plm_100, plm_200, plm_300, plm_400, plm_500, 
-          title = "Estimación paramétrica panel (Ventanas entre 100 km y 500 km)",
+stargazer(unlist(panel_bw), 
+          title = "Estimación paramétrica panel (Ventanas entre 100 m y 2 km)",
           covariate.labels = c("LATE"),
           omit = c("[a-z][:(:]", "[a-z][:(:]", "dist_p", "[:dm:]"), keep = c("treatment_tp"),
           omit.labels = c("Efectos fijos municipio", "Efectos fijos departamento", "Controles", "Efectos panel"),
@@ -92,12 +130,6 @@ stargazer(plm_100, plm_200, plm_300, plm_400, plm_500,
 
 
 panel.set <- plm.data(merge_rasters_dataframes_long, index = c("ID", "year"))
-
-
-
-
-
-subset = year %in% c(1996:2013)
 
 
 

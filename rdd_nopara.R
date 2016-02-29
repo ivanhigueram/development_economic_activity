@@ -10,22 +10,15 @@ covariates <- c("altura_mean_30arc", "aspect", "slope","hill", "dist_capital")
 covariates_df <- select(merge_rasters_300m, one_of(covariates))
 
 #Data frames by distance
-merge_rasters_10km <- filter(merge_rasters_dataframes, dist_p<10000, dist_p>-10000) 
-merge_rasters_5km <- filter(merge_rasters_dataframes, dist_p<5000, dist_p>-5000) 
-merge_rasters_3km <- filter(merge_rasters_dataframes, dist_p<3000, dist_p>-3000)
-merge_rasters_2km <- filter(merge_rasters_dataframes, dist_p<2000, dist_p>-2000)
-merge_rasters_1.5km <- filter(merge_rasters_dataframes, dist_p<1500, dist_p>-1500)
-merge_rasters_1km <- filter(merge_rasters_dataframes, dist_p<1000, dist_p>-1000) 
-merge_rasters_500m <- filter(merge_rasters_dataframes, dist_p<500, dist_p>-500)
-merge_rasters_400m <- filter(merge_rasters_dataframes, dist_p<400, dist_p>-400)
-merge_rasters_300m <- filter(merge_rasters_dataframes, dist_p<300, dist_p>-300)
-merge_rasters_200m <- filter(merge_rasters_dataframes, dist_p<200, dist_p>-200)
-
+merge_rasters_bw <- list()
+for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000)){
+  merge_rasters_bw[[str_c(i)]] <- filter(merge_rasters_dataframes, dist_p < i, dist_p > -i) 
+}
 
 #Bandwidth (2.5 km around cutoff value)          
 #RDD Tools
 discontinuity_data <- RDDdata(x = dist_p,
-                              y = dm1997,
+                              y = dm2013,
                               data = merge_rasters_dataframes,
                               cutpoint = 0) 
 
@@ -39,9 +32,29 @@ bw_ik <- RDDbw_IK(discontinuity_data)
 reg_nonpara <- RDDreg_np(RDDobject = discontinuity_data, bw = bw_ik)
 
 #rdrobust pacakge
-attach(merge_rasters_dataframes) 
-rdrobust(x = dist_p, y = dm1997)
-attach(merge_rasters_dataframes)
+
+
+dependent <- names(merge_rasters_dataframes)[1:22]
+independent <- list("treatment", "poly(dist_p, 3)", "factor(dptocode)")
+
+
+#500 m
+parametric_year_controls_1 <- lapply(dependent, function(x){
+  lm(as.formula(paste(x, paste(independent, collapse = " + "), sep = " ~ ")), data = merge_rasters_300m)
+})
+
+
+
+lapply(parametric_year_controls_1, function(x){
+  coefficients(x)[3]})
+
+
+rd_nopara <- lapply(, function(x){
+  attach(merge_rasters_dataframes) 
+  rdrobust(x = dist_p, y = x, all = T)
+  detach(merge_rasters_dataframes)
+})
+
 
 rdplot <- rdplot(dm1997, dist_p, c = 0,
                  x.label = "Distancia (metros)", y.label = "Actividad económica (dm)",

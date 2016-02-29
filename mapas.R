@@ -1,6 +1,7 @@
 library(dismo)
 library(rasterVis)
 library(animation)
+library(GISTools)
 
 #Maps
 setwd("~/Dropbox/BANREP/Pacifico/Primer_DTSER/Mapas_Graficos")
@@ -52,6 +53,7 @@ saveLatex({
   for(i in c(1:35)){
     plot(stack_pacifico_mask[[i]], col=grey.colors(100))
     plot(pacific_littoral_map_dpto, add = T, main = "Luminosidad por año")
+    map.scale()
   }
 }, nmax = 35, interval = 0.5, img.name = "dm_plot",
 latex.filename = ifelse(interactive(), "dm_plot_year.tex"))

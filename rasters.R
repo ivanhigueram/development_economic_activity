@@ -94,7 +94,7 @@ distance_raster_p_mask <- mask(distance_raster_p, pacific_littoral_map_dpto)
 names(distance_raster_p_mask) <- "dist_f"
 
 #Identify cells within the polygon
-cell_black_communities <- cellFromPolygon(distance_raster_p_mask, black_communities_union)
+cell_black_communities <- cellFromPolygon(distance_raster_mask, black_communities_union)
 
 #Distances to capitals (Cali, B/ventura, Quibdó, Popayan, Pasto) [To centroid]
 capital_distance_raster_centroid <- distanceFromPoints(stack_pacifico_mask[[1]], capital_cities_centroids)
@@ -105,12 +105,13 @@ names(capital_distance_raster_centroid_mask) <- "dist_capital"
 pacific_littoral_map_muni@data$ID_ESPACIA <- as(pacific_littoral_map_muni@data$ID_ESPACIA, "numeric")
 pacific_littoral_map_muni_r <- rasterize(pacific_littoral_map_muni, distance_raster_p_mask, 
                                          field = c(pacific_littoral_map_muni$ID_ESPACIA))
+
 pacific_littoral_map_dpto@data$Group.1 <- as(pacific_littoral_map_dpto@data$Group.1, "factor")
 pacific_littoral_map_dpto_r <- rasterize(pacific_littoral_map_dpto, distance_raster_p_mask, 
                                          field = c(pacific_littoral_map_dpto$Group.1))
 
 black_communities_littoral <- communities_littoral[[1]]
-black_communities_littoral@data$year <- as(black_communities_littoral@data$year, "numeric")
+black_communities_littoral@data$year <- as(black_communities_littoral@data$year, "factor")
 black_communities_littoral_r <- rasterize(black_communities_littoral, distance_raster_p_mask, 
                                           field = c(black_communities_littoral@data$year))
 
@@ -121,14 +122,14 @@ names(black_communities_littoral_r) <- "year_resolution"
 #----------------------------------Extract------------------------------------------# 
 
 #Extract elevation and light data for each pixel (1*1 km  grid approximately)
-raster_dataframes_list <- list(stack_pacifico_mask, elevation_pacifico, distance_raster_mask, capital_distance_raster_centroid_mask, pacific_littoral_map_muni_r, pacific_littoral_map_dpto_r, slope_pacifico, aspect_pacifico, hills_pacifico, roughness_pacifico, distance_raster_p_mask, stack_population_pacifico)
+raster_dataframes_list <- list(stack_pacifico_mask, elevation_pacifico, distance_raster_mask, capital_distance_raster_centroid_mask, pacific_littoral_map_muni_r, pacific_littoral_map_dpto_r, slope_pacifico, aspect_pacifico, hills_pacifico, roughness_pacifico, distance_raster_p_mask, stack_population_pacifico, black_communities_littoral_r)
 dataframes_extract <- lapply(raster_dataframes_list, raster::extract, seq_len(ncell(stack_pacifico_mask)), df=TRUE)
 
 #Merge
-merge_rasters_dataframes <- Reduce(function(...) merge(..., by="ID"), dataframes_extract) 
+merge_rasters_dataframes <- Reduce(function(...) merge(..., by="ID", all = T), dataframes_extract) 
 
 #Eliminate all NA cells (remember we mask the raster previously)
-merge_rasters_dataframes_clean <- complete.cases(merge_rasters_dataframes)
+merge_rasters_dataframes_clean <- complete.cases(merge_rasters_dataframes[, -53])
 merge_rasters_dataframes <- merge_rasters_dataframes[merge_rasters_dataframes_clean, ]
 
 #Get negative distances from cells inside the collective territories (community)
@@ -152,9 +153,8 @@ names(merge_rasters_dataframes)[1:22] <- str_c("dm", names(merge_rasters_datafra
 #Modify variables
 merge_rasters_dataframes$dptocode <- as.factor(merge_rasters_dataframes$dptocode)
 merge_rasters_dataframes$municode <- as.factor(merge_rasters_dataframes$municode)
-merge_rasters_dataframes$treatment <- as.numeric(ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, 0))
-merge_rasters_dataframes$dmpooled <- rowSums(merge_rasters_dataframes[, c(5:22)])
-merge_rasters_dataframes$dmpooled92_96 <- rowSums(merge_rasters_dataframes[, c(1:5)])
+merge_rasters_dataframes$treatment <- as.factor(ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, 0))
+
 
 #Reshape dataframe (wide to long)
 merge_rasters_dataframes_long <- reshape(merge_rasters_dataframes,
