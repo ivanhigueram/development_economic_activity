@@ -68,5 +68,20 @@ plot(pacific_littoral_map, lwd=2, border= "red", lwd=1, add=T)
 dev.off()
 
 
+#Time line economic activity by lights (treatment vs. no-treatment)
 
+rasters_year <- group_by(merge_rasters_dataframes_long, year, treatment)
+rasters_year <- summarise(rasters_year, 
+                              total_dm=sum(dm),
+                              mean_dm = mean(dm)
+                          
+)
+g1 <- ggplot(rasters_year, aes(x=year, y=mean_dm, colour=treatment)) + geom_line(size=0.8)
+g1 <- g1 + scale_x_continuous(breaks=c(1992:2013))
+g1 <- g1 + theme(axis.text.x = element_text(angle=90, hjust=1, vjust=.5))
+g1 <- g1 + labs(x = "Año", y = "Actividad económica (densidad luz)") 
+g1 <- g1 + ggtitle("Serie actividad económica - tratamiento vs. no tratamiento")
+g1 <- g1 + theme(plot.title=element_text(size=rel(1), lineheight=.9,
+                                         face="plain", color="black"))
+g1
 

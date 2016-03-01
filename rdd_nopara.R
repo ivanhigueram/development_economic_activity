@@ -48,13 +48,14 @@ parametric_year_controls_1 <- lapply(dependent, function(x){
 lapply(parametric_year_controls_1, function(x){
   coefficients(x)[3]})
 
+dm_names <- list()
+for(i in c(1:22)){
+  dm_names[[i]] <- names(merge_rasters_dataframes)[[i]]
+}
 
-rd_nopara <- lapply(, function(x){
-  attach(merge_rasters_dataframes) 
-  rdrobust(x = dist_p, y = x, all = T)
-  detach(merge_rasters_dataframes)
-})
-
+attach(merge_rasters_dataframes) 
+rd_nopara_97 <- rdrobust(x = dist_p, y = dm1997, all = T)
+detach(merge_rasters_dataframes)
 
 rdplot <- rdplot(dm1997, dist_p, c = 0,
                  x.label = "Distancia (metros)", y.label = "Actividad económica (dm)",
