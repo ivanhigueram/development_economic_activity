@@ -2,20 +2,26 @@ library(dismo)
 library(rasterVis)
 library(animation)
 library(GISTools)
+library(SDMTools)
 
 #Maps
 setwd("~/Dropbox/BANREP/Pacifico/Primer_DTSER/Mapas_Graficos")
 
 #Map of communities in the Pacific littoral
 opar <- par()
-par(pin=c(1,2))
-par(xaxs = "i", yaxs = "i")
-plot(pacific_littoral_map,
-     xlim=c(-80.5, -75.0),
-     ylim=c(0, 9.0),
-     axes=T)
-plot(communities_littoral[[1]], col="coral")
-plot(pacific_littoral_map_dpto, add=T)
+png("comunidades_littoral", width = 8.5, height = 11, units = 'in', res = 500)
+plot(pacific_littoral_map_dpto, axes = T, main = "Territorios de comunidades negras (1996 - 2015)")
+plot(communities_littoral[[1]], add= T, col = heat.colors(22)[communities_littoral[[1]]@data$year], border = NA)
+north.arrow(xb = -79, yb = 8, len=0.05, cex.lab = 2, lab="N", cex = 2)
+dev.off()
+
+#Levelplot distance
+png("distancia_littoral", width = 8.5, height = 11, units = 'in', res = 500)
+levelplot(distance_raster_mask, main = "Distancia por pixel a comunidad negra")
+dev.off()
+
+#Histograma
+hist(merge_rasters_dataframes$dist_p, main = "Distancia por pixel a comunidades negras", xlab = "Distancia", ylab = "Frecuencia")
 
 #Map of lights over the Pacific littoral (rasters is a list of the rasters for the all the years)
 png("litoral_distancias.jpeg", width = 8.5, height = 11, units = 'in', res = 500)
@@ -76,12 +82,15 @@ rasters_year <- summarise(rasters_year,
                               mean_dm = mean(dm)
                           
 )
-g1 <- ggplot(rasters_year, aes(x=year, y=mean_dm, colour=treatment)) + geom_line(size=0.8)
+
+g1 <- ggplot(rasters_year, aes(x=year, y=mean_dm, colour=treatment)) + geom_line(size=2)
 g1 <- g1 + scale_x_continuous(breaks=c(1992:2013))
-g1 <- g1 + theme(axis.text.x = element_text(angle=90, hjust=1, vjust=.5))
+g1 <- g1 + theme(axis.text.x = element_text(angle=90, hjust=1, vjust=.5, size = 10),
+                 axis.text.y = element_text(size = 10))
 g1 <- g1 + labs(x = "Año", y = "Actividad económica (densidad luz)") 
 g1 <- g1 + ggtitle("Serie actividad económica - tratamiento vs. no tratamiento")
-g1 <- g1 + theme(plot.title=element_text(size=rel(1), lineheight=.9,
-                                         face="plain", color="black"))
+g1 <- g1 + theme(plot.title=element_text(size=rel(2), lineheight=.9,face="plain", color="black"),
+                 axis.title.x = element_text(face="bold", size=15),
+                 axis.title.y = element_text(face = "bold", size = 15))
 g1
 

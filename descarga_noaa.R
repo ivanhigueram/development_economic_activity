@@ -18,7 +18,7 @@ filenames <- links[str_detect(links, ".v4.tar")]
 filenames_list <- as.list(filenames)
 
 #2. Create a download function (we use the option write binary "wb" in mode, this option is valid if you're working on Windows)
-downloadTIFF <- function(filename, baseurl, folder) {
+download <- function(filename, baseurl, folder) {
   dir.create(folder, showWarnings = F)
   fileurl <- str_c(baseurl, filename)
   if (!file.exists(str_c(folder, "/", filename))) {
@@ -31,7 +31,7 @@ downloadTIFF <- function(filename, baseurl, folder) {
 
 #3. Apply to list of filenames
 
-l_ply(filenames_list, downloadTIFF,
+l_ply(filenames_list, download,
       baseurl = "http://www.ngdc.noaa.gov/eog/data/web_data/v4composites/",
       folder = "NOAA2"
 )
