@@ -51,6 +51,7 @@ for(i in 1:length(rd_nonpara_table)){
 }
 
 #Graph LATE for all years with IC's 
+theme_set(theme_gray(base_size = 13))
 g1 <- ggplot(rd_nonpara_table, aes(year)) +
   geom_line(aes(y = Coef), colour = "blue") +
   geom_ribbon(aes(ymin = rd_nonpara_table$`CI Lower`, ymax = rd_nonpara_table$`CI Upper`), alpha = 0.2)
@@ -60,6 +61,10 @@ g1 <- g1 + theme(axis.text.x = element_text(angle=90, hjust=1, vjust=.5, size = 
 g1 <- g1 + labs(x="Año", y=expression(paste("Diferencia (LATE)")), title="Discontinuidad por año \n(1992- 2013)") 
 g1 <- g1 + theme(plot.title = element_text(size=20, face="bold", 
                                   margin = margin(10, 10, 10, 10)))
+g1 <- g1 +  geom_vline(xintercept=1997, linetype = 2) 
+
+#Table for years (using Stargazer)
+ 
 
 #rdlocrand package download (from Cattaneo's web-page)
 url <- "http://www-personal.umich.edu/~cattaneo/software/rdlocrand/R/"
@@ -72,15 +77,58 @@ l_ply(filenames_list, download,
       folder = "rdlocrand"
 )
 
+#Loading source commands of the package
 setwd("rdlocrand")
 source("rdwinselect.R")
 source("rdrandinf.R")
 source("rdsensitivity.R")
 source("rdrbounds.R")
 
+#Define a window of treatment
+covariates <- cbind(merge_rasters_dataframes$slope, merge_rasters_dataframes$roughness, 
+                    merge_rasters_dataframes$hill)
+
+window <- rdwinselect(dist, covariates)
+window <- rdrandinf(light[, 2], dist ,statistic = "all", 
+                 covariates = covariates, wmin = 10, wstep = 1, 
+                 rdwreps=10000, p = 2)
+
+rd_nonpara_locrand <- list()
+for(i in c(1:22)){
+  rd_nonpara_locrand[[str_c(i)]] <- rdrobust(x = dist, y = light[, i], h = 23) 
+}
+
+rd_nonpara_locrand_table <- list() #Table of LATE and p-values
+for(i in 1:length(rd_nonpara_locrand)){
+  rd_nonpara_locrand_table[[i]] <- rd_nonpara_locrand[[i]]$tabl3.str[1, ]
+}
+
+rd_nonpara_locrand_table <- ldply(rd_nonpara_locrand_table) #Reshape and create a table of LATE's
+rownames(rd_nonpara_locrand_table) <- c(1992:2013)
+rd_nonpara_locrand_table$year <- c(1992:2013)
+
+for(i in 1:length(rd_nonpara_locrand_table)){
+  rd_nonpara_locrand_table[, i] <- as.numeric(rd_nonpara_locrand_table[, i])
+}
+
+stargazer(rd_nonpara_locrand_table[,c(1:6)], summary = F,  
+          title = "Estimación no paramétrica para todos los años con supuestos de aletoriedad",
+          coef = rd_nonpara_locrand_table$`Coef `, se = rd_nonpara_locrand_table$`Std. Err.`,
+          p = rd_nonpara_locrand_table$`P>|z|`)
 
 
-
+#Graph LATE for all years with IC's for random selected windows
+theme_set(theme_gray(base_size = 13))
+g2 <- ggplot(rd_nonpara_locrand_table, aes(year)) +
+  geom_line(aes(y = Coef), colour = "blue") +
+  geom_ribbon(aes(ymin = rd_nonpara_locrand_table$`CI Lower` , ymax = rd_nonpara_locrand_table$`CI Upper`), alpha = 0.2)
+g2 <- g2 + scale_x_continuous(breaks=c(1992:2013))
+g2 <- g2 + theme(axis.text.x = element_text(angle=90, hjust=1, vjust=.5, size = 10),
+                 axis.text.y = element_text(size = 10))
+g2 <- g2 + labs(x="Año", y=expression(paste("Diferencia (LATE)")), title="Discontinuidad por año \n(1992- 2013)") 
+g2 <- g2 + theme(plot.title = element_text(size=20, face="bold", 
+                                           margin = margin(10, 10, 10, 10)))
+g2 <- g2 +  geom_vline(xintercept=1997, linetype = 2) 
 
 
 #Models 
