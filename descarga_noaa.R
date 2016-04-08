@@ -10,7 +10,6 @@ library(R.utils)
 library(httr)
 
 setwd("/Volumes/LaCie")
-#Descargar datos de luces#
 
 #1. Get URL's
 url <- "http://www.ngdc.noaa.gov/eog/data/web_data/v4composites/"

@@ -39,8 +39,8 @@ pacific_littoral_map_muni <- colombia_municipios[colombia_municipios@data$NOM_DE
 pacific_littoral_map_dpto <- colombia_departamentos[colombia_departamentos@data$Group.1 %in% pacific_littoral, ]
 pacific_littoral_maps <- split(pacific_littoral_map_dpto, factor(pacific_littoral_map_dpto@data$Group.1))
 
-#Filter only communities in the pacific littoral
-communities_littoral <- lapply(layers_reprojected, crop, pacific_littoral_map_dpto)
+#Filter only communities in the pacific littoral (using the extent of the shapefiles drop some polygons)
+communities_littoral <- lapply(layers_reprojected, crop, extent(-80, -75, 0.4, 9))
 
 #Filter communities by departments in the pacific littoral (1: black, 2: indigenous)
 communities_littoral_dpto <- list()

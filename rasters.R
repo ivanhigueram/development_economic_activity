@@ -25,13 +25,21 @@ l_ply(filenames_list, download,
       folder = "soil_quality"
 )
 
+setwd("/Volumes/LaCie/Datos/soil_quality")
+list_raster <- list.files()
+rasters <- lapply(list_raster, raster)
+rasters_extent <- extent(rasters[[1]]) #We need to put all rasters into the same extent (all have the same resolution)
+rasters <- lapply(rasters, setExtent, rasters_extent)
+rasters_pacifico_soil <- lapply(rasters, crop, pacific_littoral_map_muni)
+stack_pacifico_soil <- stack(rasters_pacifico_soil) #Stack them!
+stack_pacifico_soil_mask <- mask(stack_pacifico_soil, pacific_littoral_map_dpto)
+stack_pacifico_soil_mask <- raster::resample(stack_pacifico_soil_mask, stack_pacifico_mask, method = "ngb")
+
 # 2. Elevation data from USGS
 download.file(     
   url = "http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Global_tiles_GMTED/300darcsec/mea/W090/10S090W_20101117_gmted_mea300.tif" ,
   destfile = "altura_mean_30arc.tif", mode="wb")
 elevation <- raster("altura_mean_30arc.tif")
-
-
 
 
 # 3. Open .tif files as a raster (the raster package allow to read these files in the disk and not in the memory, this improves the efficiency of functions in R)
@@ -56,7 +64,7 @@ population_pacifico <- lapply(population_rasters, crop, pacific_littoral_map_mun
 population_pacifico <- lapply(population_pacifico, setExtent, rasters_extent_pacifico)
 stack_population_pacifico <- stack(population_pacifico) 
 stack_population_pacifico <- mask(stack_population_pacifico, pacific_littoral_map_muni)
-stack_population_pacifico <- resample(stack_population_pacifico, stack_pacifico_mask)
+stack_population_pacifico <- raster::resample(stack_population_pacifico, stack_pacifico_mask)
 
 
 # 5. The same for elevation raster (and calculate slope and aspect)
@@ -74,9 +82,9 @@ flowdir_pacifico <- terrain(elevation_pacifico, opt = "flowdir")
 
 #--------------------------------------------------Distances------------------------------------------------#
 
-# 0. These are the saved raster distance files
+# 0. These are the saved raster distance files (it takes so much time to calculate so I have this copy)
+setwd("/Volumes/LaCie/Datos")
 distance_raster <- raster("distance_raster.grd")
-distance_raster_p_mask <- raster("distance_raster_frontera.grd")
 
 # 1. Create a distance raster (all distances to the nearest point)
 distance_raster <- distanceFromPoints(stack_pacifico_mask[[1]], black_communities_union_p)
@@ -89,7 +97,11 @@ cell_black_communities <- cellFromPolygon(distance_raster_mask, black_communitie
 
 #------------------------------------------------Controls--------------------------------------------------#
 
-# 1. Create a distance raster to the pacific ocean
+# 0. Saved distance to coastline
+setwd("/Volumes/LaCie/Datos")
+distance_raster_coast_mask <- raster("distance_raster_coast.grd")
+
+# 1. Create a distance raster to the pacific ocean (manually create a coastline)
 x11()
 plot(as(pacific_littoral_map_dpto, "SpatialLines"))
 x <- crop(pacific_littoral_map_dpto, drawPoly())
@@ -107,23 +119,23 @@ names(capital_distance_raster_centroid_mask) <- "dist_capital"
 
 # 3. Identify cells from departments and municipalities (for fixed-effects in RDD)
 pacific_littoral_map_muni@data$ID_ESPACIA <- as(pacific_littoral_map_muni@data$ID_ESPACIA, "numeric")
-pacific_littoral_map_muni_r <- rasterize(pacific_littoral_map_muni, distance_raster_p_mask, 
+pacific_littoral_map_muni_r <- rasterize(pacific_littoral_map_muni, stack_pacifico_mask[[1]], 
                                          field = c(pacific_littoral_map_muni$ID_ESPACIA))
 
-pacific_littoral_map_dpto@data$Group.1 <- as(pacific_littoral_map_dpto@data$Group.1, "factor")
-pacific_littoral_map_dpto_r <- rasterize(pacific_littoral_map_dpto, distance_raster_p_mask, 
+pacific_littoral_map_dpto@data$Group.1 <- droplevels(pacific_littoral_map_dpto@data$Group.1)
+pacific_littoral_map_dpto_r <- rasterize(pacific_littoral_map_dpto, stack_pacifico_mask[[1]], 
                                          field = c(pacific_littoral_map_dpto$Group.1))
+pacific_littoral_map_dpto_r <- is.factor(pacific_littoral_map_dpto_r)
 
 
 # 4. Identify resolution years of communitary terrotories
 black_communities_littoral <- communities_littoral[[1]]
-black_communities_littoral@data$year <- as(black_communities_littoral@data$year, "factor")
-black_communities_littoral_r <- rasterize(black_communities_littoral, distance_raster_p_mask, 
-                                          field = c(black_communities_littoral@data$year))
+black_communities_littoral_r <- rasterize(black_communities_littoral, stack_pacifico_mask[[1]], 
+                                          field = black_communities_littoral@data$year)
 
 # 5. Rename layers
 
-names(pacific_littoral_map_muni_r) <- "municode"
+names(pacific_littoral_map_muni_r) <- "municode" 
 names(pacific_littoral_map_dpto_r) <- "dptocode"
 names(black_communities_littoral_r) <- "year_resolution"
 
@@ -153,7 +165,7 @@ names(merge_rasters_dataframes)[2:36] <- str_sub(names(merge_rasters_dataframes)
 merge_rasters_dataframes <- merge_rasters_dataframes[, order(names(merge_rasters_dataframes), decreasing  = F)]
 
 for(i in duplicated_years){ 
-    merge_rasters_dataframes[, i] <- rowMeans(merge_rasters_dataframes[, which(names(merge_rasters_dataframes) == i) : which(names(merge_rasters_dataframes) == str_c(i, 1, sep = "."))])
+  merge_rasters_dataframes[, i] <- rowMeans(merge_rasters_dataframes[, which(names(merge_rasters_dataframes) == i) : which(names(merge_rasters_dataframes) == str_c(i, 1, sep = "."))])
 } 
 merge_rasters_dataframes <- merge_rasters_dataframes[, -which(names(merge_rasters_dataframes) %in% duplicated_years2)]
 names(merge_rasters_dataframes)[1:22] <- str_c("dm", names(merge_rasters_dataframes)[1:22])
