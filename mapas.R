@@ -69,11 +69,11 @@ latex.filename = ifelse(interactive(), "dm_plot_year.tex"))
 
 
 #Map of lights over the Pacific littoral (rasters is a list of the rasters for the all the years)
-littoral_lights2013 <- mask(rasters_pacifico[[35]], pacific_littoral_map)
-png("litoral_comunidades_2013_municipios.jpeg", width = 8.5, height = 11, units = 'in', res = 1000)
-plot(littoral_lights2013, col=grey.colors(100))
-plot(layers_reprojected[[1]], add=T,  boder="blue", lwd=)
-plot(pacific_littoral_map, lwd=2, border= "red", lwd=1, add=T)
+png("litoral_comunidades_2013_municipios.png", width = 8.5, height = 9, units = 'in', res = 900)
+plot(stack_pacifico_mask[[35]], col=grey.colors(100), main = "Densidad de luz y comunidades negras e indígenas")
+plot(communities_littoral[[1]], add=T,  boder= 10, lwd = 1.5)
+plot(communities_littoral[[2]], add = T, border = "yellow", lwd = 1.5)
+plot(pacific_littoral_map_dpto, lwd=2, border= "red", lwd=1, add=T)
 dev.off()
 
 

@@ -7,6 +7,7 @@ library(stringr)
 library(RCurl)
 library(plyr)
 library(R.utils)
+library(httr)
 
 setwd("/Volumes/LaCie")
 #Descargar datos de luces#
