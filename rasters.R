@@ -39,6 +39,7 @@ stack_pacifico_soil_mask <- raster::resample(stack_pacifico_soil_mask, stack_pac
 download.file(     
   url = "http://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Global_tiles_GMTED/300darcsec/mea/W090/10S090W_20101117_gmted_mea300.tif" ,
   destfile = "altura_mean_30arc.tif", mode="wb")
+setwd("/Volumes/LaCie/Datos")
 elevation <- raster("altura_mean_30arc.tif")
 
 
@@ -123,9 +124,9 @@ pacific_littoral_map_muni_r <- rasterize(pacific_littoral_map_muni, stack_pacifi
                                          field = c(pacific_littoral_map_muni$ID_ESPACIA))
 
 pacific_littoral_map_dpto@data$Group.1 <- droplevels(pacific_littoral_map_dpto@data$Group.1)
+pacific_littoral_map_dpto@data$Group.1 <-as(pacific_littoral_map_dpto@data$Group.1, "numeric")
 pacific_littoral_map_dpto_r <- rasterize(pacific_littoral_map_dpto, stack_pacifico_mask[[1]], 
                                          field = c(pacific_littoral_map_dpto$Group.1))
-pacific_littoral_map_dpto_r <- is.factor(pacific_littoral_map_dpto_r)
 
 
 # 4. Identify resolution years of communitary terrotories
@@ -142,18 +143,31 @@ names(black_communities_littoral_r) <- "year_resolution"
 #--------------------------------------------------------Extract------------------------------------------# 
 
 # 1. Extract all data for each pixel (1*1 km  grid approximately)
-raster_dataframes_list <- list(stack_pacifico_mask, elevation_pacifico, distance_raster_mask, capital_distance_raster_centroid_mask, pacific_littoral_map_muni_r, pacific_littoral_map_dpto_r, slope_pacifico, aspect_pacifico, hills_pacifico, roughness_pacifico, distance_raster_p_mask, stack_population_pacifico, black_communities_littoral_r)
+raster_dataframes_list <- list(stack_pacifico_mask, 
+                               elevation_pacifico, 
+                               distance_raster_mask, 
+                               capital_distance_raster_centroid_mask,
+                               distance_raster_coast_mask,
+                               pacific_littoral_map_muni_r, 
+                               pacific_littoral_map_dpto_r, 
+                               slope_pacifico, aspect_pacifico, hills_pacifico, roughness_pacifico, 
+                               stack_population_pacifico, 
+                               stack_pacifico_soil_mask,
+                               black_communities_littoral_r
+                               )
 dataframes_extract <- lapply(raster_dataframes_list, raster::extract, seq_len(ncell(stack_pacifico_mask)), df=TRUE)
 
 # 2. Merge
 merge_rasters_dataframes <- Reduce(function(...) merge(..., by="ID", all = T), dataframes_extract) 
 
-# 3. Eliminate all NA cells (this are NA's from the mask process)
-merge_rasters_dataframes_clean <- complete.cases(merge_rasters_dataframes[, -53])
+# 3. Get negative distances from cells inside the collective territories (community)
+
+merge_rasters_dataframes$dist_p <- ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, - 1) * merge_rasters_dataframes$dist_p
+
+# 4. Eliminate all NA cells (this are NA's from the mask process)
+merge_rasters_dataframes_clean <- complete.cases(merge_rasters_dataframes[, 2:59])
 merge_rasters_dataframes <- merge_rasters_dataframes[merge_rasters_dataframes_clean, ]
 
-# 4. Get negative distances from cells inside the collective territories (community)
-merge_rasters_dataframes$dist_p <- ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, -1) * merge_rasters_dataframes$dist_p
 
 # 5. Average years with two rasters
 
@@ -173,8 +187,28 @@ names(merge_rasters_dataframes)[1:22] <- str_c("dm", names(merge_rasters_datafra
 # 6. Modify variables
 merge_rasters_dataframes$dptocode <- as.factor(merge_rasters_dataframes$dptocode)
 merge_rasters_dataframes$municode <- as.factor(merge_rasters_dataframes$municode)
+merge_rasters_dataframes$year_resolution <- as.factor(merge_rasters_dataframes$year_resolution)
+soils <- c(40:46)
+merge_rasters_dataframes[, soils] <- lapply(merge_rasters_dataframes[, soils], factor)
+
+# 6.1. Create different trearments (Regular treatment)
 merge_rasters_dataframes$treatment <- as.factor(ifelse(merge_rasters_dataframes$ID %in% unlist(cell_black_communities), 1, 0))
 
+# 6.2. Resolution year treatment
+for(level in unique(merge_rasters_dataframes$year_resolution)){
+  merge_rasters_dataframes[paste("t", level, sep = "")] <- ifelse(merge_rasters_dataframes$year_resolution == level, 1, 0)
+}
+
+na.zero <- function (x){
+  x[is.na(x)] <- 0
+  return(x)
+}
+merge_rasters_dataframes$tNA <- NULL
+merge_rasters_dataframes[, 49:66] <- lapply(merge_rasters_dataframes[, 49:66], na.zero)
+merge_rasters_dataframes <- merge_rasters_dataframes[, mixedsort(colnames(merge_rasters_dataframes))]
+
+# 6.3. Cumulative treatment
+merge_rasters_dataframes[, 47:64] <- matrixStats::rowCummaxs(as.matrix(merge_rasters_dataframes[, 47:64]))
 
 # 7. Reshape dataframe (wide to long)
 merge_rasters_dataframes_long <- reshape(merge_rasters_dataframes,
@@ -191,5 +225,5 @@ detach(merge_rasters_dataframes_long)
 # 8. Export to Stata (pure benchmarking for estimations)
 setwd("/Volumes/LaCie/Datos") 
 require(foreign)
-write.dta(merge_rasters_dataframes, "merge_rasters_dataframes.dta")
-write.dta(merge_rasters_dataframes_long, "merge_rasters_dataframes_long.dta")
+write.dta(merge_rasters_dataframes, "merge_rasters_dataframes_nuevo.dta")
+write.dta(merge_rasters_dataframes_long, "merge_rasters_dataframes_long_nuevo.dta")

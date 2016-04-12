@@ -4,10 +4,10 @@
 #Non-bandwidth estimators - possible treatment years (97)
 #First order polynomial
 parametric1_t <- lm(dm1997 ~ treatment + dist_p , data = merge_rasters_dataframes)
-parametric1_c_t <- lm(dm1997 ~ treatment + dist_p + altura_mean_30arc + aspect + slope + hill + dist_capital, 
+parametric1_c_t <- lm(dm1997 ~ treatment + dist_p + altura_mean_30arc + aspect + slope + hill + dist_capital,  
                        data = merge_rasters_dataframes)
-parametric1_cc_t <- lm(dm1997 ~ treatment + dist_p + altura_mean_30arc + aspect + slope + hill + dist_capital 
-                        + factor(dptocode) + factor(municode),
+parametric1_cc_t <- lm(dm1997 ~ as.factor(t1) + dist_p + altura_mean_30arc + aspect + slope + hill + dist_coast
+                        + factor(dptocode) + factor(municode), subset = dist_capital > 89830.0,
                         data = merge_rasters_dataframes)
 robustclust1.se_t <- cluster.vcov(parametric1_cc_t, merge_rasters_dataframes$municode)
 robust1clust_t <- coeftest(parametric1_cc_t, robustclust1.se_t)[, 4]
@@ -27,8 +27,8 @@ robust2clust_t <- coeftest(parametric2_t, robustclust2.se_t)[, 4]
 parametric3_t <- lm(dm1997 ~ treatment + poly(dist_p, 3) , data = merge_rasters_dataframes)
 parametric3_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 3) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
                       data = merge_rasters_dataframes)
-parametric3_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 3) + altura_mean_30arc + aspect + slope + hill + dist_capital 
-                       + factor(dptocode) + factor(municode),
+parametric3_cc_t <- lm(log(1 + dm1997) ~ treatment + poly(dist_p, 3) + altura_mean_30arc + aspect + slope + hill + dist_capital + dist_coast
+                       + factor(dptocode) + factor(municode) + factor(sq7),
                        data = merge_rasters_dataframes)
 robustclust3.se_t <- cluster.vcov(parametric3_t, merge_rasters_dataframes$municode)
 robust3clust_t <- coeftest(parametric3_cc_t, robustclust3.se_t)[, 4]
@@ -37,7 +37,7 @@ robust3clust_t <- coeftest(parametric3_cc_t, robustclust3.se_t)[, 4]
 parametric4_t <- lm(dm1997 ~ treatment + poly(dist_p, 4) , data = merge_rasters_dataframes)
 parametric4_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 4) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
                       data = merge_rasters_dataframes)
-parametric4_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 4) + altura_mean_30arc + aspect + slope + hill + dist_capital 
+parametric4_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 4) + altura_mean_30arc + aspect + slope + hill + dist_capital + dist_coast
                        + factor(dptocode) + factor(municode),
                        data = merge_rasters_dataframes)
 robustclust4.se_t <- cluster.vcov(parametric4_cc_t, merge_rasters_dataframes$municode)
@@ -70,10 +70,10 @@ stargazer(parametric1_cc_t, parametric2_cc_t, parametric3_cc_t, parametric4_cc_t
 
 #Table 3: Treatment year (1997) with parametric estimators and controls - bw = 500 m, 1km and 2km only with first and second degree polynomials
 
-parametric1km_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) , data = merge_rasters_bw[[6]])
-parametric1km_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
+parametric1km_t <- lm(dm1997 ~ treatment + poly(dist_p, 2) , data = merge_rasters_bw[[6]])
+parametric1km_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 2) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
                       data = merge_rasters_bw[[6]])
-parametric1km_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital 
+parametric1km_cc_t <- lm(dm1997 ~ treatment + poly(dist_p, 1) + altura_mean_30arc + aspect + slope + hill + dist_capital
                        + factor(dptocode) + factor(municode),
                        data = merge_rasters_bw[[6]])
 robustclust1km.se_t <- vcovHC(parametric1km_cc_t, "HC1")

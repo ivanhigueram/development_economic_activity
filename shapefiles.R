@@ -73,4 +73,3 @@ black_communities_union <- SpatialPolygons(lapply(1:length(res), function(i) Pol
 black_communities_union_l <- as(black_communities_union, "SpatialLines")
 black_communities_union_p <- as(black_communities_union_l, "SpatialPoints")
 
-

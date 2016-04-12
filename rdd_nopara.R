@@ -13,11 +13,11 @@ for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000)){
 
 #RDD Tools
 discontinuity_data <- RDDdata(x = dist_p,
-                              y = dm1997,
+                              y = log(0.1 + dm2010),
                               data = merge_rasters_dataframes,
                               cutpoint = 0) 
 
-reg_para <- RDDreg_lm(discontinuity_data, order = 3)
+reg_para <- RDDreg_lm(discontinuity_data, covariates = merge_rasters_dataframes[, 1:10], order = 3)
 reg_nonpara <- RDDreg_np(discontinuity_data)
 
 reg_para <- RDDreg_lm(discontinuity_data, order = 1)
@@ -37,6 +37,12 @@ rd_nonpara <- list()
 for(i in c(1:22)){
   rd_nonpara[[str_c(i)]] <- rdrobust(x = dist, y = light[, i])
 }
+
+rdrobust(y = merge_rasters_dataframes$dm1997,
+         x = merge_rasters_dataframes$dist_p,
+         fuzzy = factor(merge_rasters_dataframes$t1)
+         )
+
 
 rd_nonpara_table <- list() #Table of LATE and p-values
 for(i in 1:length(rd_nonpara)){
@@ -88,7 +94,8 @@ source("rdrbounds.R")
 
 #Define a window of treatment
 covariates <- cbind(merge_rasters_dataframes$slope, merge_rasters_dataframes$roughness, 
-                    merge_rasters_dataframes$hill)
+                    merge_rasters_dataframes$hill, merge_rasters_dataframes$colds00ag,
+                    merge_rasters_dataframes$sq1)
 
 window <- rdwinselect(dist, covariates)
 window <- rdrandinf(light[, 2], dist ,statistic = "all", 
