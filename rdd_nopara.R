@@ -13,17 +13,18 @@ for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000)){
 
 #RDD Tools
 discontinuity_data <- RDDdata(x = dist_p,
-                              y = log(0.1 + dm2010),
+                              y = log(1 + dm2010),
                               data = merge_rasters_dataframes,
+                              covar = merge_rasters_dataframes[, 1:10],
                               cutpoint = 0) 
 
-reg_para <- RDDreg_lm(discontinuity_data, covariates = merge_rasters_dataframes[, 1:10], order = 3)
-reg_nonpara <- RDDreg_np(discontinuity_data)
+reg_para <- RDDreg_lm(discontinuity_data, order = 1, covariates = merge_rasters_dataframes[, 1:10])
+reg_nonpara <- RDDreg_np(discontinuity_data, covariates = merge_rasters_dataframes[, 1:10])
 
 reg_para <- RDDreg_lm(discontinuity_data, order = 1)
 bw_ik <- RDDbw_IK(discontinuity_data)
 reg_nonpara <- RDDreg_np(RDDobject = discontinuity_data, bw = bw_ik)
-plotSensi(reg_nonpara, from = 1000, to = 10000, by = 500)
+plotSensi(reg_nonpara, from = -1000, to = 1000, by = 200)
 plotPlacebo(reg_nonpara)
 
 #rdrobust pacakge
@@ -35,12 +36,12 @@ light <- cbind(merge_rasters_dataframes[1:22])
 #Estimation for all years
 rd_nonpara <- list()
 for(i in c(1:22)){
+  for(j in )
   rd_nonpara[[str_c(i)]] <- rdrobust(x = dist, y = light[, i])
 }
 
 rdrobust(y = merge_rasters_dataframes$dm1997,
          x = merge_rasters_dataframes$dist_p,
-         fuzzy = factor(merge_rasters_dataframes$t1)
          )
 
 

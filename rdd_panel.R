@@ -1,6 +1,7 @@
 #RDD panel 
 #Create lagged variable
 library(DataCombine)
+library(multiwayvcov)
 library(plm)
 
 #Treatment variable within time and space
@@ -24,12 +25,12 @@ merge_rasters_long_notreatment <- filter(merge_rasters_dataframes_long, year < 1
 #Panel tables
 #Table 4: Panel treatment robust
 
-panel_1 <- lm(dm ~  treatment  + poly(dist_p, 1) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 
-                factor(dptocode) + factor(municode) + factor(year), data = merge_rasters_long_treatment)
-panelclust1 <- cluster.vcov(panel_1, merge_rasters_long_treatment$municode) 
+panel_1 <- lm(log(1 + dm) ~  t  + poly(dist_p, 1) +  altura_mean_30arc + slope + roughness + hill + dist_capital + dist_colonial + dist_coast + colds95ag +colds00ag +
+              factor(municode) + factor(year) + factor(sq1) + factor(sq7), data = merge_rasters_dataframes_long)
+panelclust1 <- cluster.vcov(panel_1, merge_rasters_dataframes_long$ID)
 panelrobust1 <- vcovHC(panel_1, "HC1")
 panelclust1_coef <- coeftest(panel_1, panelclust1)
-panelrobust1_coef <- coeftest(panel_1, panelrobust1)[, 4]
+panelrobust1_coef <- coeftest(panel_1, panelrobust1)
 
 
 panel_2 <- lm(dm ~  treatment  + poly(dist_p, 2) +  altura_mean_30arc + aspect + slope + hill + dist_capital + 

@@ -101,6 +101,7 @@ g3
 dev.off()
 
 #Timeline of communitites by year
+communities_littoral[[1]]@data$AREA_POLY <- areaPolygon(communities_littoral[[1]])
 black_communities_year <- group_by(communities_littoral[[1]]@data, year)
 black_communities_year <- summarise(black_communities_year,
                                     total_area = sum(AREA_POLY))

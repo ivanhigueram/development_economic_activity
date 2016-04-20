@@ -59,6 +59,13 @@ capital_cities_map <- pacific_littoral_map_muni[pacific_littoral_map_muni@data$N
 capital_cities_maps <- split(capital_cities_map, factor(capital_cities_map@data$NOM_MUNICI))
 capital_cities_centroids <- gCentroid(capital_cities_map, byid=T)
 
+
+#Filter colonial cities (for distnace calculations)
+colonial_cities <- c("CALI", "POPAYÁN", "PASTO")
+colonial_cities_map <- pacific_littoral_map_muni[pacific_littoral_map_muni@data$NOM_MUNICI %in% colonial_cities, ]
+colonial_cities_maps <- split(colonial_cities_map, factor(colonial_cities_map@data$NOM_MUNICI))
+colonial_cities_centroids <- gCentroid(colonial_cities_map, byid=T)
+
 #Join black communities territories (remember we have exported another spatial join)
 black_communities_union <- gUnaryUnion(communities_littoral[[1]]) #R Union - deprecated option 
 

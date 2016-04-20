@@ -3,15 +3,18 @@
 
 #Non-bandwidth estimators - possible treatment years (97)
 #First order polynomial
-parametric1_t <- lm(dm1997 ~ treatment + dist_p , data = merge_rasters_dataframes)
+parametric1_t <- lm(log(0.01 + dm1997) ~ factor(t1997) + dist_p , data = merge_rasters_dataframes)
 parametric1_c_t <- lm(dm1997 ~ treatment + dist_p + altura_mean_30arc + aspect + slope + hill + dist_capital,  
                        data = merge_rasters_dataframes)
-parametric1_cc_t <- lm(dm1997 ~ as.factor(t1) + dist_p + altura_mean_30arc + aspect + slope + hill + dist_coast
-                        + factor(dptocode) + factor(municode), subset = dist_capital > 89830.0,
+parametric1_cc_t <- lm(log(0.01 + dm1997) ~ as.factor(t1997) + dist_p + altura_mean_30arc + roughness + slope + colds95ag + dist_coast + dist_capital + dist_colonial
+                        + factor(sq1) + factor(sq2) + factor(sq3) + factor(sq4) + factor(sq5) + factor(sq6) + factor(sq7) 
+                        + factor(dptocode) + factor(municode),
                         data = merge_rasters_dataframes)
-robustclust1.se_t <- cluster.vcov(parametric1_cc_t, merge_rasters_dataframes$municode)
-robust1clust_t <- coeftest(parametric1_cc_t, robustclust1.se_t)[, 4]
+robustclust1.se_t <- cluster.vcov(parametric1_cc_t, ~ municode + dptocode + community_id)
+robust1clust_t <- coeftest(parametric1_cc_t, robustclust1.se_t)
 
+
++ factor(sq1) + factor(sq2) + factor(sq3) + factor(sq4) + factor(sq5) + factor(sq6) + factor(sq7)
 
 #Second order polynomial
 parametric2_t <- lm(dm1997 ~ treatment + poly(dist_p, 2) , data = merge_rasters_dataframes)
@@ -27,11 +30,12 @@ robust2clust_t <- coeftest(parametric2_t, robustclust2.se_t)[, 4]
 parametric3_t <- lm(dm1997 ~ treatment + poly(dist_p, 3) , data = merge_rasters_dataframes)
 parametric3_c_t <- lm(dm1997 ~ treatment + poly(dist_p, 3) + altura_mean_30arc + aspect + slope + hill + dist_capital, 
                       data = merge_rasters_dataframes)
-parametric3_cc_t <- lm(log(1 + dm1997) ~ treatment + poly(dist_p, 3) + altura_mean_30arc + aspect + slope + hill + dist_capital + dist_coast
-                       + factor(dptocode) + factor(municode) + factor(sq7),
+parametric3_cc_t <- lm(log(0.01 + dm1997) ~ as.factor(t18) + poly(dist_p, 3) + altura_mean_30arc + aspect + slope + hill + dist_coast + dist_capital
+                       + factor(dptocode) + factor(municode) + factor(sq1) + roughness  + colds95ag,
+                       subset = 
                        data = merge_rasters_dataframes)
-robustclust3.se_t <- cluster.vcov(parametric3_t, merge_rasters_dataframes$municode)
-robust3clust_t <- coeftest(parametric3_cc_t, robustclust3.se_t)[, 4]
+robustclusst3.se_t <- vcovHC(parametric3_cc_t, "HC1")
+robust3clust_t <- coeftest(parametric3_cc_t, robustclusst3.se_t)
 
 #Fourth order polynomial
 parametric4_t <- lm(dm1997 ~ treatment + poly(dist_p, 4) , data = merge_rasters_dataframes)
