@@ -3,6 +3,8 @@
 library(DataCombine)
 library(multiwayvcov)
 library(plm)
+source("~/Dropbox/ConleySEs/ConleySEs_17June2015.R")
+setwd("~")
 
 #Treatment variable within time and space
 merge_rasters_dataframes_long$treatment_t <- as.numeric(ifelse(merge_rasters_dataframes_long$year > 1996, 1, 0))
@@ -25,7 +27,7 @@ merge_rasters_long_notreatment <- filter(merge_rasters_dataframes_long, year < 1
 #Panel tables
 #Table 4: Panel treatment robust
 
-panel_1 <- lm(log(1 + dm) ~  t  + poly(dist_p, 1) +  altura_mean_30arc + slope + roughness + hill + dist_capital + dist_colonial + dist_coast + colds95ag +colds00ag +
+panel_1 <- lm(log(1 + dm) ~  t  + poly(dist_p, 1) +  altura_mean_30arc + slope + roughness + dist_capital + dist_colonial + dist_coast + colds95ag +colds00ag +
               factor(municode) + factor(year) + factor(sq1) + factor(sq7), data = merge_rasters_dataframes_long)
 panelclust1 <- cluster.vcov(panel_1, merge_rasters_dataframes_long$ID)
 panelrobust1 <- vcovHC(panel_1, "HC1")

@@ -150,6 +150,13 @@ names(pacific_littoral_map_dpto_r) <- "dptocode"
 names(black_communities_littoral_r) <- "year_resolution"
 names(black_communities_littoral_r2) <- "community_id"
 
+# 6. Get coordinates for each pixel
+
+coordinates <- stack_pacifico_mask %>% 
+  coordinates() %>% 
+  data.frame() %>%
+coordinates$ID <- row.names(coordinates)
+
 #--------------------------------------------------------Extract------------------------------------------# 
 
 # 1. Extract all data for each pixel (1*1 km  grid approximately)
@@ -168,7 +175,7 @@ raster_dataframes_list <- list(stack_pacifico_mask,
                                black_communities_littoral_r2
                                )
 dataframes_extract <- lapply(raster_dataframes_list, raster::extract, seq_len(ncell(stack_pacifico_mask)), df=TRUE)
-
+dataframes_extract[[length(dataframes_extract) +1 ]] <- coordinates
 # 2. Merge
 merge_rasters_dataframes <- Reduce(function(...) merge(..., by="ID", all = T), dataframes_extract) 
 
@@ -219,7 +226,7 @@ na.zero <- function (x){
   return(x)
 }
 merge_rasters_dataframes$tNA <- NULL
-merge_rasters_dataframes[, 51:68] <- lapply(merge_rasters_dataframes[, 51:68], na.zero)
+merge_rasters_dataframes[, 53:70] <- lapply(merge_rasters_dataframes[, 53:70], na.zero)
 merge_rasters_dataframes <- merge_rasters_dataframes[, mixedsort(colnames(merge_rasters_dataframes))]
 
 # 6.3. Cumulative treatment
