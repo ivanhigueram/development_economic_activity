@@ -3,14 +3,11 @@
 library(DataCombine)
 library(multiwayvcov)
 library(plm)
+library(stringr)
 source("~/Dropbox/ConleySEs/ConleySEs_17June2015.R")
 setwd("~")
 
-#Treatment variable within time and space
-merge_rasters_dataframes_long$treatment_t <- as.numeric(ifelse(merge_rasters_dataframes_long$year > 1996, 1, 0))
-merge_rasters_dataframes_long$treatment_tp <- with(merge_rasters_dataframes_long, as.numeric(treatment_t) * as.numeric(treatment))
-
-#Subset dataframe by year and windows of treatment (bw)
+#Subset dataframe by year and windows of treatment (bw) and years
 merge_rasters_long_bw <- list()
 for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000, 5000, 6000, 10000)){
   merge_rasters_long_bw[[str_c(i)]] <- filter(merge_rasters_dataframes_long, dist_p < i, dist_p > -i) 
@@ -21,8 +18,6 @@ for(i in c(1992:2013)){
   merge_rasters_long_year[[i]] <- filter(merge_rasters_dataframes_long, year == i) 
 }
 
-merge_rasters_long_treatment <- filter(merge_rasters_dataframes_long, year > 1997)
-merge_rasters_long_notreatment <- filter(merge_rasters_dataframes_long, year < 1997)
 
 #Panel tables
 #Table 4: Panel treatment robust
@@ -138,11 +133,5 @@ stargazer(panel_bw[[2]], panel_bw[[5]], panel_bw[[7]], panel_bw[[9]], panel_bw[[
           omit.stat = c("rsq", "adj.rsq", "ser"), keep.stat = c("n", "f", "aic"),df = F, notes.label = "Nota: ", notes.align = "c",
           initial.zero = F
 )
-
-c(100, 200, 300, 400, 500, 1000, 2500, 2000, 5000, 6000, 10000)
-
-panel.set <- plm.data(merge_rasters_dataframes_long, index = c("ID", "year"))
-
-
 
 

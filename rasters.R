@@ -175,7 +175,7 @@ raster_dataframes_list <- list(stack_pacifico_mask,
                                black_communities_littoral_r2
                                )
 dataframes_extract <- lapply(raster_dataframes_list, raster::extract, seq_len(ncell(stack_pacifico_mask)), df=TRUE)
-dataframes_extract[[length(dataframes_extract) +1 ]] <- coordinates
+dataframes_extract[[length(dataframes_extract) + 1 ]] <- coordinates
 # 2. Merge
 merge_rasters_dataframes <- Reduce(function(...) merge(..., by="ID", all = T), dataframes_extract) 
 
@@ -264,3 +264,9 @@ setwd("/Volumes/LaCie/Datos")
 require(foreign)
 write.dta(merge_rasters_dataframes, "merge_rasters_dataframes_nuevo.dta")
 write.dta(merge_rasters_dataframes_long, "merge_rasters_dataframes_long_nuevo.dta")
+
+ls <- list()
+rm(ls)
+
+merge_rasters_dataframes <- read.dta("merge_rasters_dataframes_nuevo.dta")
+merge_rasters_dataframes_long <- read.dta("merge_rasters_dataframes_long_nuevo.dta")

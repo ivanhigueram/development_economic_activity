@@ -3,6 +3,13 @@ library(rasterVis)
 library(animation)
 library(GISTools)
 library(SDMTools)
+library(ggplot2)
+
+
+##Polinomial fit
+lm_predicted <- predict.lm(parametric_2.5km_control_fx[[4]], type = "terms", terms = "")
+
+
 
 #Maps
 setwd("~/Dropbox/BANREP/Pacifico/Primer_DTSER/Mapas_Graficos")
