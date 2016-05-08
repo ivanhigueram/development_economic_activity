@@ -7,6 +7,14 @@ library(xtable)
 library(plyr)
 library(dplyr)
 
+
+#Tables by group
+vars <- c("altura_mean_30arc", "roughness", "slope", "colds00ag", "dist_coast", "dist_capital", "dist_colonial")
+stats_table <- merge_rasters_dataframes %>%
+  group_by(treatment) %>%
+  summarize()
+
+
 #Data frames by distance
 merge_rasters_bw <- list()
 for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000)){
@@ -35,8 +43,8 @@ plotPlacebo(reg_nonpara)
 #rdrobust pacakge
 
 #Variables <- cut-off (dist_p) and outcome (all the dm)
-dist <- merge_rasters_dataframes$dist_p
-light <- cbind(merge_rasters_dataframes[1:22])
+dist <- merge_rasters_dataframes$dist_p_km
+light <- cbind(merge_rasters_dataframes[14:35])
 
 #Estimation for all years
 rd_nonpara <- list()
@@ -96,8 +104,7 @@ source("rdsensitivity.R")
 source("rdrbounds.R")
 
 #Define a window of treatment
-covariates <- cbind(merge_rasters_dataframes$slope, merge_rasters_dataframes$roughness, 
-                    merge_rasters_dataframes$colds00ag, merge_rasters_dataframes$sq1)
+covariates <- cbind(merge_rasters_dataframes$slope, merge_rasters_dataframes$roughness)
 
 window <- rdwinselect(dist, covariates)
 window <- rdrandinf(light[, 2], dist ,statistic = "all", 
@@ -178,19 +185,29 @@ detach(merge_rasters_dataframes)
 merge_rasters_dataframes$dist_p_km <- merge_rasters_dataframes$dist_p / 1000
 tratamientos <- names(merge_rasters_dataframes)[49:65]
 luces <- names(merge_rasters_dataframes)[19:35]
-controles <- c("altura_mean_30arc + roughness + slope + colds00ag + dist_coast + dist_capital + dist_colonial")
+controles <- c("altura_mean_30arc + roughness + slope + colds00ag + dist_coast + sq1 + sq2 + sq3 + sq4 + sq5 + sq6 + sq7")
 rd_nonpara_ik <- list()
 
-formulas_fx <- paste(paste("log(0.01 + " ,luces, ")" , sep = ""), "dist_p_km", sep = " ~ ")
+formulas_sharp <- paste(paste(paste("log(0.01 + ", luces, ")", sep = ""), "dist_p_km", sep = " ~ "), controles, sep = " | ") 
+formulas_fuzzy <- paste(paste(paste(paste("log(0.01 + ", luces, ")", sep = ""), "dist_p_km", sep = " ~ "),  tratamientos, sep = " + "), controles, sep = " | ") 
 
-rd_nonpara_ik <- lapply(formulas_fx, function(x) {
+rd_nonpara_ik <- lapply(formulas_sharp, function(x) {
   RDestimate(as.formula(x),
-             data = merge_rasters_dataframes,
+             data = merge_rasters_dataframes_colonial,
+             cluster = merge_rasters_dataframes_colonial$municode,
              cutpoint = 0,
-             cluster = merge_rasters_dataframes$municode,
-             frame = T,
-             model = T)
+             model = TRUE)
 }) 
+
+
+rd_nonpara_ik_fuzzy <- lapply(formulas_fuzzy, function(x) {
+  RDestimate(as.formula(x),
+             data = merge_rasters_dataframes_colonial,
+             cluster = merge_rasters_dataframes_colonial$municode,
+             cutpoint = 0,
+             model = TRUE)
+}) 
+
 
 
 #Extract estimates and CI's.
@@ -201,7 +218,7 @@ rd_nonpara_ik_table <- lapply(rd_nonpara_ik, "[", c("est","p", "bw")) %>%
   mutate(year = c(rep(1997:2013, each = 3))) %>%
   setcolorder(c("year", "LATE", "Half-BW", "Double-BW", ".id")) %>%
   mutate( year = as.factor(year)) %>%
-  select(-.id)
+  select_(-.id)
 
 
 stargazer(rd_nonpara_ik_table, summary = F)
@@ -261,16 +278,127 @@ plot(rd_nonpara_ik[[8]], 200 ,range = c(-5, 5), las = 1)
 plot(rd_nonpara_ik[[9]], 200 ,range = c(-5, 5), las = 1)
 
 
+#RD for pixels near cities
+formulas_fx <- paste(paste(paste("log(0.01 + " ,luces, ")" , sep = ""), "dist_p_km", sep = " ~ "), controles, sep = " | ") 
+merge_rasters_dataframes_cities <- subset(merge_rasters_dataframes, dist_capital < summary(dist_capital)[3]) 
+merge_rasters_dataframes_colonial <- subset(merge_rasters_dataframes, dist_colonial < summary(dist_colonial)[3])
 
-
-
-
-
-#Placebo with random cutpoints
-rd_nonpara_ik_placebo <- lapply(formulas_fx, function(x) {
+rd_nonpara_ik_cities <- lapply(formulas_fx, function(x) {
   RDestimate(as.formula(x),
              data = merge_rasters_dataframes,
-             cutpoint = 10,
-             cluster = c(merge_rasters_dataframes$municode) ,
-             frame = T)
+             cutpoint = 0,
+             cluster = merge_rasters_dataframes_cities$municode,
+             verbose = T)
 }) 
+
+
+#RD for non treatment years
+merge_rasters_dataframes$dist_p_km <- merge_rasters_dataframes$dist_p / 1000
+tratamientos <- names(merge_rasters_dataframes)[49:65]
+luces_no_tratamiento <- names(merge_rasters_dataframes)[14:18]
+controles <- c("altura_mean_30arc + roughness + slope + colds00ag + dist_coast + dist_capital + dist_colonial")
+rd_nonpara_ik <- list()
+
+formulas_fx_nt <- paste(paste(paste("log(0.01 + " ,luces_no_tratamiento, ")" , sep = ""), "dist_p_km", sep = " ~ "), controles, sep = " | ") 
+
+rd_nonpara_ik_nt <- lapply(formulas_fx_nt, function(x) {
+  RDestimate(as.formula(x),
+             data = merge_rasters_dataframes,
+             cluster = merge_rasters_dataframes$municode,
+             cutpoint = 0,
+             model = TRUE)
+})
+
+#Extract estimates and CI's.
+
+rd_nonpara_ik_nt_table <- lapply(rd_nonpara_ik_nt, "[", c("est","p", "bw")) %>%
+  lapply(ldply) %>%
+  ldply() %>%
+  mutate(year = c(rep(1992:1996, each = 3))) %>%
+  setcolorder(c("year", "LATE", "Half-BW", "Double-BW", ".id")) %>%
+  mutate( year = as.factor(year)) %>%
+  dplyr::select(-.id)
+
+
+stargazer(rd_nonpara_ik_nt_table, summary = F)
+
+rd_nonpara_ik_nt_table <- lapply(rd_nonpara_ik_nt, "[", c("est","p", "bw")) %>%
+  lapply(ldply) %>%
+  ldply() %>%
+  mutate(year = c(rep(1992:1996, each = 3))) %>%
+  setcolorder(c("year", "LATE", "Half-BW", "Double-BW", ".id")) %>%
+  mutate( year = as.factor(year)) %>%
+  reshape(direction = "wide", idvar = "year", timevar = ".id") 
+
+rd_nonpara_ik_nt_table_ci <- lapply(rd_nonpara_ik_nt, "[", c("ci")) %>%
+  lapply(ldply) %>%
+  lapply("[", 2, ) %>%
+  ldply() %>%
+  mutate(year = c(rep(1992:1996, each = 1))) %>%
+  reshape(direction = "wide", idvar = "year", timevar = ".id") 
+
+names(rd_nonpara_ik_nt_table_ci)[3] <- "superior"
+names(rd_nonpara_ik_nt_table_ci)[2] <- "inferior"
+
+#Merge LATE's data
+rd_nonpara_ik_nt_table <- cbind(rd_nonpara_ik_nt_table, rd_nonpara_ik_nt_table_ci)
+
+
+#Graph ggplot estimates LATE's
+library(ggplot2)
+
+g4 <- ggplot(rd_nonpara_ik_nt_table, aes(x = as.numeric(as.character(year)), y = LATE.est)) +
+  geom_ribbon(aes(ymin = rd_nonpara_ik_nt_table$inferior  , ymax = rd_nonpara_ik_nt_table$superior), alpha = 0.2)
+g4 <- g4 + geom_line()  + theme_grey()
+g4 <- g4 + scale_x_continuous(breaks=c(1992:1996)) + coord_fixed(ratio = 11)
+g4 <- g4 + labs(x="Año", y=expression(paste("Diferencia (LATE)"))) 
+g4 <- g4 + theme(axis.title.y = element_text(angle = 90, size = 12),
+                 axis.title.x = element_text(angle = 0, size = 12))
+g4 <- g4 + theme(axis.text.x = element_text(size = 10), axis.text.y = element_text(size = 10))
+
+g4 
+
+#Placebo with random cutpoints (panel)
+discontinuity_data <- RDDdata(x = dist_p_km,
+                              y = log(0.01 + dm),
+                              data = merge_rasters_dataframes_long,
+                              cutpoint = 0) 
+reg_nonpara <- RDDreg_np(discontinuity_data)
+placebo <- plotPlacebo(reg_nonpara, from = 0.1, to = 1, by = 0.1, same_bw = T, output = "ggplot")
+placebo <- mutate(placebo, significativo = as.numeric(p_value > 0.05))
+
+
+g3 <- ggplot(placebo, aes(x = cutpoint, y = LATE)) +
+  geom_ribbon(aes(ymin = placebo$CI_low, ymax = placebo$CI_high), alpha = 0.2)
+g3 <- g3 + geom_line(aes(colour = placebo$position)) + theme_grey()
+g3 <- g3 + scale_x_continuous(breaks = seq(-80, 40, by = 10))
+g3 <- g3 + coord_fixed(ratio = 20) + geom_hline(yintercept = 0)
+g3 <- g3 + labs(x="Punto de discontinuidad", y=expression(paste("Diferencia (LATE)")))
+g3 <- g3 + theme(axis.title.y = element_text(angle = 90, size = 12),
+                 axis.title.x = element_text(angle = 0, size = 12), legend.position = "none")
+g3 <- g3 + theme(axis.text.x = element_text(size = 10), axis.text.y = element_text(size = 10))
+
+g3
+
+
+#Placebo with random cutpoints (2013)
+discontinuity_data <- RDDdata(x = dist_p_km,
+                              y = log(0.01 + dm2013),
+                              data = merge_rasters_dataframes,
+                              cutpoint = 0) 
+reg_nonpara_2013 <- RDDreg_np(discontinuity_data)
+placebo_2013 <- plotPlacebo(reg_nonpara_2013, from = 0.1, to = 1, by = 0.1, same_bw = T, output = "data")
+placebo_2013 <- mutate(placebo_2013, significativo = as.numeric(p_value > 0.05))
+
+
+g4 <- ggplot(placebo_2013, aes(x = cutpoint, y = LATE)) +
+  geom_ribbon(aes(ymin = placebo_2013$CI_low, ymax = placebo_2013$CI_high), alpha = 0.2)
+g4 <- g4 + geom_line(aes(colour = placebo_2013$position)) + theme_grey()
+g4 <- g4 + scale_x_continuous(breaks = seq(-80, 40, by = 10))
+g4 <- g4 + coord_fixed(ratio = 20) + geom_hline(yintercept = 0)
+g4 <- g4 + labs(x="Punto de discontinuidad", y=expression(paste("Diferencia (LATE)")))
+g4 <- g4 + theme(axis.title.y = element_text(angle = 90, size = 12),
+                 axis.title.x = element_text(angle = 0, size = 12), legend.position = "none")
+g4 <- g4 + theme(axis.text.x = element_text(size = 10), axis.text.y = element_text(size = 10))
+
+g4

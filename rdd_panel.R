@@ -2,6 +2,7 @@
 #Create lagged variable
 library(DataCombine)
 library(multiwayvcov)
+library(lmtest)
 library(plm)
 library(stringr)
 source("~/Dropbox/ConleySEs/ConleySEs_17June2015.R")
@@ -9,7 +10,7 @@ setwd("~")
 
 #Subset dataframe by year and windows of treatment (bw) and years
 merge_rasters_long_bw <- list()
-for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000, 5000, 6000, 10000)){
+for(i in c(100, 200, 300, 400, 500, 1000, 2500, 2000, 3000, 5000, 10000)){
   merge_rasters_long_bw[[str_c(i)]] <- filter(merge_rasters_dataframes_long, dist_p < i, dist_p > -i) 
 }
 
@@ -22,7 +23,7 @@ for(i in c(1992:2013)){
 #Panel tables
 #Table 4: Panel treatment robust
 
-panel_1 <- lm(log(1 + dm) ~  t  + poly(dist_p, 1) +  altura_mean_30arc + slope + roughness + dist_capital + dist_colonial + dist_coast + colds95ag +colds00ag +
+panel_1 <- lm(log(0.01 + dm) ~  factor(t)  + poly(dist_p, 1) +  altura_mean_30arc + slope + roughness + dist_capital + dist_colonial + dist_coast + colds95ag +colds00ag +
               factor(municode) + factor(year) + factor(sq1) + factor(sq7), data = merge_rasters_dataframes_long)
 panelclust1 <- cluster.vcov(panel_1, merge_rasters_dataframes_long$ID)
 panelrobust1 <- vcovHC(panel_1, "HC1")
@@ -133,5 +134,10 @@ stargazer(panel_bw[[2]], panel_bw[[5]], panel_bw[[7]], panel_bw[[9]], panel_bw[[
           omit.stat = c("rsq", "adj.rsq", "ser"), keep.stat = c("n", "f", "aic"),df = F, notes.label = "Nota: ", notes.align = "c",
           initial.zero = F
 )
+
+
+
+
+
 
 

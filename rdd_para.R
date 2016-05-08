@@ -303,3 +303,6 @@ g1 <- ggplot(merge_rasters_dataframes, aes(x = dist_p_km, y = log(1 + dm2013))) 
 g1 <- g1 + geom_line(data = predicted, size = 0.5, color = "blue") 
 g1
 
+
+
+
