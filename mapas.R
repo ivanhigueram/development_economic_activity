@@ -6,8 +6,33 @@ library(SDMTools)
 library(ggplot2)
 
 
-##Polinomial fit
-lm_predicted <- predict.lm(parametric_2.5km_control_fx[[4]], type = "terms", terms = "")
+##Extremos
+tratados <- merge_rasters_dataframes[merge_rasters_dataframes$treatment == "1", c(42:43)] %>%
+tratados <-  SpatialPointsDataFrame(coords = tratados[, c(1,2)], data = tratados, proj4string = crs(rasters_lights))
+
+low <- extremos[extremos[,3] == stack_pacifico_mask[[35]]@data@min,1:2] # min value
+plot(stack_pacifico_mask[[35]])
+points(tratados, pch=15, col="red")
+points(low, pch=15, col="blue")
+
+##ggplot maps
+
+# 1. Prepare data
+communities_littoral[[1]]@data$OBJECTID_1 <- rownames(communities_littoral[[1]]@data)
+black_communities_points <- tidy(communities_littoral[[1]], region = "OBJECTID_1")
+black_communities_polygon <- tidy(black_communities_union)
+black_communities_df <- join(black_communities_points, communities_littoral[[1]]@data, by = "OBJECTID_1")
+
+
+ggplot(black_communities_polygon, aes(x = long, y = lat, group = id)) +
+  geom_polygon(colour = "black", fill = "grey80", size = 1) +
+  coord_equal() +
+  theme()
+
+
+comunidades_mapa <- ggplot() + geom_polygon(data = communities_littoral[[1]], aes(x = long, y = lat, group =  ID), 
+                                            fill = "cadetblue", color="grey")
+comunidades_mapa <- comunidades_mapa + coord_equal()+xlim(c(-5000000, 5000000))+ylim(c(1000000, 8000000))
 
 
 

@@ -199,7 +199,7 @@ rd_nonpara_ik <- lapply(formulas_sharp, function(x) {
              model = TRUE)
 }) 
 
-
+ 
 rd_nonpara_ik_fuzzy <- lapply(formulas_fuzzy, function(x) {
   RDestimate(as.formula(x),
              data = merge_rasters_dataframes_colonial,
@@ -281,7 +281,6 @@ plot(rd_nonpara_ik[[9]], 200 ,range = c(-5, 5), las = 1)
 #RD for pixels near cities
 formulas_fx <- paste(paste(paste("log(0.01 + " ,luces, ")" , sep = ""), "dist_p_km", sep = " ~ "), controles, sep = " | ") 
 merge_rasters_dataframes_cities <- subset(merge_rasters_dataframes, dist_capital < summary(dist_capital)[3]) 
-merge_rasters_dataframes_colonial <- subset(merge_rasters_dataframes, dist_colonial < summary(dist_colonial)[3])
 
 rd_nonpara_ik_cities <- lapply(formulas_fx, function(x) {
   RDestimate(as.formula(x),

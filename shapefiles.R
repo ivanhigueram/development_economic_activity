@@ -34,7 +34,7 @@ row.names(colombia_municipios_agg) <- as.character(colombia_municipios_agg$Group
 colombia_departamentos <- SpatialPolygonsDataFrame(colombia_departamentos, colombia_municipios_agg) #Shape file for departments (made with the join of municipalities. "Group.1" is the depatment code)
 
 #Select only departments and municipalities over the pacific littoral (Chocó, Valle del Cauca, Cauca and Nariño)
-pacific_littoral <- c("CAUCA", "CHOCÓ", "VALLE DEL CAUCA", "NARIÑO")
+pacific_littoral <- c("CAUCA", "CHOCÓ", "VALLE DEL CAUCA", "NARIÑO", "ANTIOQUIA")
 pacific_littoral_map_muni <- colombia_municipios[colombia_municipios@data$NOM_DEPART %in% pacific_littoral, ]
 pacific_littoral_map_dpto <- colombia_departamentos[colombia_departamentos@data$Group.1 %in% pacific_littoral, ]
 pacific_littoral_maps <- split(pacific_littoral_map_dpto, factor(pacific_littoral_map_dpto@data$Group.1))
@@ -79,4 +79,3 @@ black_communities_union <- SpatialPolygons(lapply(1:length(res), function(i) Pol
 #Transform union to lines and points 
 black_communities_union_l <- as(black_communities_union, "SpatialLines")
 black_communities_union_p <- as(black_communities_union_l, "SpatialPoints")
-
