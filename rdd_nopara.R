@@ -1,4 +1,4 @@
-library(RDDtools)
+library(rddtools)
 library(rdd)
 library(rdrobust)
 library(plm)
@@ -7,12 +7,81 @@ library(xtable)
 library(plyr)
 library(dplyr)
 
+merge_rasters_dataframes$dist_p_km <- (merge_rasters_dataframes$dist_p) / 1000
 
-#Tables by group
+#Table 1 - Descriptive statistics by group
 vars <- c("altura_mean_30arc", "roughness", "slope", "colds00ag", "dist_coast", "dist_capital", "dist_colonial")
 stats_table <- merge_rasters_dataframes %>%
   group_by(treatment) %>%
   summarize()
+
+
+#Table 2 - RD Sharp for 2013
+attach(merge_rasters_dataframes)
+rd2013 <- rdrobust(x = dist_p_km,
+                   y = log(0.01 + dm2013),
+                   vce = "hc1",
+                   all =T)
+rd2013_controles <- rdrobust(x = dist_p_km,
+                   y = log(0.01 + dm2013),
+                   covs = cbind(altura_mean_30arc, roughness, slope, factor(sq1), dist_coast, dist_colonial,
+                                dist_capital),
+                   vce = "hc1",
+                   all =T)
+rd2013_controles_fx <- rdrobust(x = dist_p_km,
+                             y = log(0.01 + dm2013),
+                             covs = cbind(altura_mean_30arc, roughness, slope, factor(sq1), dist_coast, dist_colonial,
+                                          dist_capital, factor(municode), factor(dptocode)),
+                             cluster = ID + municode,
+                             vce = "hc1",
+                             all =T)
+rd2013_controles_fx_nn <- rdrobust(x = dist_p_km,
+                                y = log(0.01 + dm2013),
+                                covs = cbind(altura_mean_30arc, roughness, slope, factor(sq1), dist_coast, dist_colonial,
+                                             dist_capital, factor(municode), factor(dptocode)),
+                                vce = "nn", nnmatch = 8,
+                                all =T)
+
+detach(merge_rasters_dataframes)
+
+
+stargazer(t(rbind(t(rd2013$tabl3.str[3, ]), t(rd2013_controles$tabl3.str[3, ]), t(rd2013_controles_fx$tabl3.str[3, ]), 
+                  t(rd2013_controles_fx_nn$tabl3.str[3, ]))))
+
+#Robustness table - covariates RD
+convariates <- c("") 
+
+rd2013_rdd <- rdd::RDestimate(log(0.01 + slope) ~ dist_p_km ,
+                              data = merge_rasters_dataframes,
+                              cluster = merge_rasters_dataframes$ID,
+                              cutpoint = 0,
+                              frame = T
+                              )
+
+#Table 4 - Panel data
+
+
+
+#Graph 1 - RD estimates
+attach(merge_rasters_dataframes)
+g_rd1 <- rdplot(x = dist_p_km,
+       y = log(0.01 + dm2013),
+       binselect = "esmv",
+       x.lim = c(-10, 10),
+       y.lim = c(-5, -3),
+       x.label = "Distancia normalizada a la frontera (km.)",
+       y.label = "Logaritmo densidad de luz",
+       title = "")
+detach(merge_rasters_dataframes)
+
+#Table 3 - RD estimates for cavariates
+attach(merge_rasters_dataframes)
+rd2013_roughness <- rdrobust(x = dist_p_km,
+                   y = log(0.01 + roughness),
+                   vce = "hc1",
+                   cluster = municode + ID + dptocode,
+                   all =T)
+detach(merge_rasters_dataframes)
 
 
 #Data frames by distance
@@ -26,13 +95,13 @@ merge_rasters_dataframes_depto <- split(merge_rasters_dataframes, merge_rasters_
 
 
 #RDD Tools
-discontinuity_data <- RDDdata(x = dist_p_km,
-                              y = log(0.01 + dm1997),
+discontinuity_data <- rddtools::rdd_data(x = dist_p_km,
+                              y = log(0.01 + dm2013),
                               data = merge_rasters_dataframes,
                               cutpoint = 0) 
 
 reg_para <- RDDreg_lm(discontinuity_data, order = 1, covariates = merge_rasters_dataframes[, 1:10])
-reg_nonpara <- RDDreg_np(discontinuity_data)
+reg_nonpara <- rdd_reg_np(discontinuity_data)
 
 reg_para <- RDDreg_lm(discontinuity_data, order = 1)
 bw_ik <- RDDbw_IK(discontinuity_data)
@@ -95,6 +164,22 @@ l_ply(filenames_list, download,
       baseurl = "http://www-personal.umich.edu/~cattaneo/software/rdlocrand/R/",
       folder = "rdlocrand"
 )
+
+#rddensity package dowload (from Cattaneo's webpage)
+url <- "http://www-personal.umich.edu/~cattaneo/software/rddensity/R/"
+links <- getHTMLLinks(url)
+filenames <- links[str_detect(links, ".R")]
+filenames_list <- as.list(filenames)
+
+l_ply(filenames_list, download,
+      baseurl =  "http://www-personal.umich.edu/~cattaneo/software/rddensity/R/",
+      folder = "rddensity"
+)
+#Loading source commands of the package
+setwd("rddensity")
+source("rdbwdensity.R")
+source("rddensity_fun.R")
+source("rddensity.R")
 
 #Loading source commands of the package
 setwd("rdlocrand")
@@ -183,8 +268,8 @@ detach(merge_rasters_dataframes)
 
 #rdd package
 merge_rasters_dataframes$dist_p_km <- merge_rasters_dataframes$dist_p / 1000
-tratamientos <- names(merge_rasters_dataframes)[49:65]
-luces <- names(merge_rasters_dataframes)[19:35]
+tratamientos <- names(merge_rasters_dataframes)[42:58]
+luces <- names(merge_rasters_dataframes)[12:35]
 controles <- c("altura_mean_30arc + roughness + slope + colds00ag + dist_coast + sq1 + sq2 + sq3 + sq4 + sq5 + sq6 + sq7")
 rd_nonpara_ik <- list()
 
@@ -293,7 +378,7 @@ rd_nonpara_ik_cities <- lapply(formulas_fx, function(x) {
 
 #RD for non treatment years
 merge_rasters_dataframes$dist_p_km <- merge_rasters_dataframes$dist_p / 1000
-tratamientos <- names(merge_rasters_dataframes)[49:65]
+tratamientos <- names(merge_rasters_dataframes)[42:59]
 luces_no_tratamiento <- names(merge_rasters_dataframes)[14:18]
 controles <- c("altura_mean_30arc + roughness + slope + colds00ag + dist_coast + dist_capital + dist_colonial")
 rd_nonpara_ik <- list()
@@ -401,3 +486,35 @@ g4 <- g4 + theme(axis.title.y = element_text(angle = 90, size = 12),
 g4 <- g4 + theme(axis.text.x = element_text(size = 10), axis.text.y = element_text(size = 10))
 
 g4
+
+
+merge_rasters_dataframes$dist_p_km = merge_rasters_dataframes$dist_p / 1000
+prueba <- RDestimate(log(0.01 + dm2013) ~ dist_p_km,
+             data = merge_rasters_dataframes,
+             cluster = merge_rasters_dataframes$municode,
+             cutpoint = 0,
+             model = TRUE)
+
+attach(merge_rasters_dataframes)
+prueba_robust <- rdrobust( y = log(0.01 + dm2013),
+                           x = dist_p_km,
+                           cluster = municode)
+
+rdbwselect(y = log(0.01 + dm2013),
+           x = dist_p_km, 
+           all = T)
+
+rdplot(y = log(0.01 + dm2013), x = dist_p_km, c = 0,
+                      x.label = "Distancia", y.label = "Actividad económica",
+                      x.lim = c(-50, 50), binselect = "es", ci = 95,
+                      title = "Discontinuidad en la actividad económica - 2013")
+
+rdplot_2013 <- rdplot(y = dm2013, x = dist_p, c = 0, p = 4, binselect = "esmv",
+                      x.label = "Distancia", y.label = "Actividad económica", y.lim = c(0, 2), 
+                      lowerend = -6000, upperend = 6000, col.lines = c(size = 10), 
+                      title = "Discontinuidad en la actividad económica - 2013")
+
+detach(merge_rasters_dataframes)
+
+
+

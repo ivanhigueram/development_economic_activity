@@ -68,6 +68,7 @@ colonial_cities_centroids <- gCentroid(colonial_cities_map, byid=T)
 
 #Join black communities territories (remember we have exported another spatial join)
 black_communities_union <- gUnaryUnion(communities_littoral[[1]]) #R Union - deprecated option 
+colombia <- gUnaryUnion(colombia_departamentos)
 
 #Clear holes from polygon (thanks Roger Bivand)
 BCp <- slot(black_communities_union, "polygons") 

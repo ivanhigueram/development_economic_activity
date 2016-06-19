@@ -13,9 +13,8 @@ merge_rasters_dataframes_long <- mutate(merge_rasters_dataframes_long, dist_p_km
 setnames(merge_rasters_dataframes_long, c("y", "x"), c("lat", "lon"))
 
 
-m1 <-felm(log(0.01 + dm) ~ poly(dist_p_km, 1) + as.factor(t) + altura_mean_30arc + roughness + slope + colds00ag + dist_coast + dist_capital + dist_colonial
-         + factor(sq1) + factor(sq2) + factor(sq3) + factor(sq4) + factor(sq5) + factor(sq6) + factor(sq7) | year + municode + dptocode | 0 | ID + year ,
-         data = merge_rasters_dataframes_long, exactDOF = T, subset = dist_p_km <= 2.5) 
+m1 <-felm(log(0.01 + dm) ~  as.factor(t) | ID + year + dptocode + municode + community_id | 0 | ID + year,
+         data = merge_rasters_dataframes_long, exactDOF = T, subset = dist_p_km <= 5) 
 m2 <-felm(log(0.01 + dm) ~ poly(dist_p_km, 2) + as.factor(t) + altura_mean_30arc + roughness + slope + colds00ag + dist_coast + dist_capital + dist_colonial
           + factor(sq1) + factor(sq2) + factor(sq3) + factor(sq4) + factor(sq5) + factor(sq6) + factor(sq7) | year + municode + dptocode | 0 | ID + year ,
           data = merge_rasters_dataframes_long, exactDOF = T, subset = dist_p_km <= 2.5) 
@@ -75,7 +74,7 @@ plot(rd_nonpara_ik_panel)
 ptm <-proc.time()
 SE <-ConleySEs(reg = m,
                unit = "ID",
-               time = x"year",
+               time = "year",
                lat = "lat", lon = "lon",
                dist_fn = "SH", dist_cutoff = 500, 
                lag_cutoff = 5,
@@ -87,13 +86,17 @@ coeftest(m, SE)
 
 #With my data
 
-reg <- felm(log(0.01 + dm) ~ factor(t) + I(dist_p/1000) + altura_mean_30arc + roughness + slope + colds00ag + dist_coast + dist_capital + dist_colonial
-         + factor(sq1) + factor(sq2) + factor(sq3) + factor(sq4) + factor(sq5) + factor(sq6) + factor(sq7) | municode + year, 
-          data = merge_rasters_dataframes_long, keepCX = T)
+
+# Table 3 - Panel for the bw suggested by RD
+merge_rasters_dataframes_long$dist_p_km <- merge_rasters_dataframes_long$dist_p / 1000
+merge_rasters_dataframes_long_bw <- filter(merge_rasters_dataframes_long, dist_p_km < rd2013_controles_fx$bws[1, 1], dist_p_km > -rd2013_controles_fx$bws[1, 1])
+merge_rasters_dataframes_long_capital <- filter(merge_rasters_dataframes_long_bw, dist_capital > 48827.96)
 
 
+reg <- felm(log(0.01 + dm) ~ as.factor(t) | ID + year | 0 | 0, data = merge_rasters_dataframes_long_bw)
+reg_clust <- felm(log(0.01 + dm) ~ as.factor(t) | ID + year | 0 |  ID + year, data = merge_rasters_dataframes_long_bw)
+reg_clust_capitals <- felm(log(0.01 + dm) ~ as.factor(t) | ID + year | 0 | ID + year, data = merge_rasters_dataframes_long_capital)
 
 
-
-
+stargazer(reg_clust, reg_clust_capitals)
 

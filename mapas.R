@@ -6,6 +6,26 @@ library(SDMTools)
 library(ggplot2)
 
 
+
+#Mapa 1. OpenStreetMap
+pacifico_osm <- openmap(c(8.700, -79.420),c(0.648, -74.928), type="osm", minNumTiles = 15) %>%
+  openproj(projection = "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+plot(pacifico_osm)
+plot(black_communities_union, add = T)
+raster::scalebar(100, type = "bar", below = "km", divs = 4, xy = click()) #scalebar
+
+
+#Mapa 2. Raster lignhts
+rasters_suma <- stackApply(rasters_lights, indices = rep(1, 35), fun = mean)
+plot(rasters_suma, axes = F)
+plot(capital_cities_centroids, cex = 0.5, pch = 16, add = T)
+plot(colombia, add = T)
+plot(black_communities_union, add = T, lty = 3, lwd = 0.5)
+plot(pacific_littoral_map_dpto, add = T, lwd = 0.5)
+raster::scalebar(200, type = "bar", below = "km", divs = 4, xy = click())
+
+
+
 ##Extremos
 tratados <- merge_rasters_dataframes[merge_rasters_dataframes$treatment == "1", c(42:43)] %>%
 tratados <-  SpatialPointsDataFrame(coords = tratados[, c(1,2)], data = tratados, proj4string = crs(rasters_lights))
@@ -110,19 +130,16 @@ dev.off()
 
 
 #Timeline economic activity by lights (treatment vs. no-treatment)
-rasters_year <- group_by(merge_rasters_dataframes_long, year, treatment)
-rasters_year <- summarise(rasters_year, 
-                              total_dm=sum(dm),
-                              mean_dm = mean(dm)
-                          
+rasters_year <- group_by(merge_rasters_dataframes_long, year, treatment) %>%
+  summarise(total_dm=sum(dm),
+            mean_dm = mean(dm)
 )
 
-g3 <- ggplot(rasters_year, aes(x=year, y=total_dm, colour=treatment)) + geom_line(size=2)
+g3 <- ggplot(rasters_year, aes(x=year, y=total_dm, colour=as.factor(treatment))) + geom_line(size=1)
 g3 <- g3 + scale_x_continuous(breaks=c(1992:2013))
 g3 <- g3 + theme(axis.text.x = element_text(angle=90, hjust=1, vjust=.5, size = 10),
                  axis.text.y = element_text(size = 10))
 g3 <- g3 + labs(x = "Año", y = "Actividad económica (densidad luz)") 
-g3 <- g3 + ggtitle("Serie actividad económica - tratamiento vs. no tratamiento")
 g3 <- g3 + theme(
                  axis.title.x = element_text(face="bold", size=10),
                  axis.title.y = element_text(face = "bold", size = 10))

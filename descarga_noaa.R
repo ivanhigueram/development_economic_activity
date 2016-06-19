@@ -23,7 +23,7 @@ download <- function(filename, baseurl, folder) {
   fileurl <- str_c(baseurl, filename)
   if (!file.exists(str_c(folder, "/", filename))) {
     download.file(fileurl, 
-                  destfile = str_c(folder,"/", filename), mode="wb")
+                  destfile = str_c(folder,"/", filename), mode = "wb")
     Sys.sleep(1)
   }
 }
